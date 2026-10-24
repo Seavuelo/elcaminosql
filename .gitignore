@@ -1,0 +1,23 @@
+# Entornos virtuales y dependencias
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribución y compilación
+build/
+dist/
+*.egg-info/
+
+# Archivos de configuración de editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

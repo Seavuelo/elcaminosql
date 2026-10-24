@@ -1,0 +1,13 @@
+[project]
+name=El Camino SQL
+base_path=/home/Seavuelo/sql-junior-to-senior
+description=Videojuego educativo pixel art de SQL
+file_patterns=*.py;*.sql;*.md;*.json;*.sh;
+
+[build-menu]
+NF_00_LB=_Ejecutar
+NF_00_CM=python3 "%f"
+NF_00_WD=%d
+EX_00_LB=_Ejecutar Juego
+EX_00_CM=python3 main.py
+EX_00_WD=/home/Seavuelo/sql-junior-to-senior
