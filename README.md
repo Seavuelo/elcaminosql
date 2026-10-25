@@ -6,7 +6,7 @@ Este proyecto está empezando, esta entrega sirve para jugar, probar y dar comen
 
 Para jugar sin instalar Python, usa el ZIP de Windows x64 adjunto al [pre-release en GitHub](https://github.com/Seavuelo/elcaminosql/releases), extrae todo y abre `ElCaminoSQL.exe`, mantén `_internal` junto al ejecutable
 
-[Notas de esta versión](docs/releases/v0.2.0-alpha.1.md) · [Cómo subir cambios y publicar](docs/PUBLICAR.md)
+[Notas de esta versión](docs/releases/v0.2.0-alpha.1.md) 
 ### *"Para todo buen final, hay un inicio..."*
 *Desarrollado por Seavuelo*
 
