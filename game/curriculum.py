@@ -1,4 +1,4 @@
-import pygame
+from collections import Counter
 
 class DailyTask:
     def __init__(self, year, day, task_idx, title, objective, hint, canonical_query, explanation, note_id=None, is_write=False):
@@ -13,36 +13,18 @@ class DailyTask:
         self.note_id = note_id or f"y{year}_d{day}"
         self.is_write = is_write
 
+    def progressive_hint(self, level):
+        from game.hints import task_hint
+        return task_hint(self, level)
+
     def validate(self, db_manager, user_result, user_query=""):
         if not user_result or not user_result.get("success"):
             return False, "La consulta falló o tiene un error de sintaxis."
 
-        u_upper = user_query.upper().strip()
-
-        # Operaciones DDL / DML
+        # DatabaseManager valida los efectos y revierte escrituras incorrectas.
         if self.is_write:
-            if "CREATE TABLE" in self.canonical_query.upper():
-                if "CREATE TABLE" not in u_upper:
-                    return False, "Debes usar la instrucción CREATE TABLE para definir la estructura solicitada."
-            elif "INSERT INTO" in self.canonical_query.upper():
-                if "INSERT INTO" not in u_upper:
-                    return False, "Debes insertar los datos solicitados usando la instrucción INSERT INTO."
-            elif "UPDATE" in self.canonical_query.upper():
-                if "UPDATE" not in u_upper or "WHERE" not in u_upper:
-                    return False, "Cuidado: Recuerda siempre incluir la cláusula WHERE al usar UPDATE para no modificar filas indebidas."
-            elif "DELETE" in self.canonical_query.upper():
-                if "DELETE" not in u_upper or "WHERE" not in u_upper:
-                    return False, "Cuidado: Recuerda usar DELETE FROM con la cláusula WHERE para borrar solo las filas indicadas."
-            elif "CREATE VIEW" in self.canonical_query.upper():
-                if "CREATE VIEW" not in u_upper:
-                    return False, "Debes crear la vista usando CREATE VIEW ..."
-            elif "CREATE INDEX" in self.canonical_query.upper():
-                if "CREATE INDEX" not in u_upper:
-                    return False, "Debes crear el índice usando CREATE INDEX ..."
-            elif "EXPLAIN" in self.canonical_query.upper():
-                if "EXPLAIN" not in u_upper:
-                    return False, "Debes inspeccionar el plan de ejecución usando EXPLAIN QUERY PLAN ..."
-
+            if not user_result.get("write_validated"):
+                return False, "La escritura debe ejecutarse con validación de sus cambios."
             return True, self.explanation
 
         # Consultas de lectura (SELECT)
@@ -64,9 +46,6 @@ class DailyTask:
             col_list = ", ".join(r_cols)
             return False, f"Devolviste más columnas de las pedidas ({len(u_cols)} en vez de {len(r_cols)}). Se solicitó únicamente ({col_list})."
 
-        if set(u_cols) != set(r_cols):
-            return False, f"Los nombres de las columnas no coinciden con lo pedido. Se esperaba ({', '.join(r_cols)}), pero entregaste ({', '.join(u_cols)})."
-
         # 2. Validación de filas devueltas
         u_rows = user_result.get("rows", [])
         r_rows = ref.get("rows", [])
@@ -81,7 +60,8 @@ class DailyTask:
             return False, f"Faltan filas en el resultado ({len(u_rows)} devueltas de {len(r_rows)} esperadas). Revisa si tu condición en el WHERE es demasiado restrictiva."
 
         # Mapear columnas según el orden solicitado en la referencia
-        col_indices = [u_cols.index(c) for c in r_cols]
+        col_indices = ([u_cols.index(c) for c in r_cols] if set(u_cols) == set(r_cols)
+                       else list(range(len(r_cols))))
 
         if "ORDER BY" in self.canonical_query.upper():
             for u_r, r_r in zip(u_rows, r_rows):
@@ -97,8 +77,8 @@ class DailyTask:
             def norm_row(r, indices):
                 return tuple(round(r[i], 2) if isinstance(r[i], float) else str(r[i]) for i in indices)
 
-            u_set = sorted([norm_row(r, col_indices) for r in u_rows])
-            r_set = sorted([norm_row(r, range(len(r_cols))) for r in r_rows])
+            u_set = Counter(norm_row(r, col_indices) for r in u_rows)
+            r_set = Counter(norm_row(r, range(len(r_cols))) for r in r_rows)
 
             if u_set != r_set:
                 return False, "Los datos devueltos no coinciden con la información esperada. Revisa los filtros aplicados."
@@ -107,15 +87,18 @@ class DailyTask:
 
 
 class ExamQuestion:
-    def __init__(self, q_num, title, objective, canonical_query):
+    def __init__(self, q_num, title, objective, canonical_query, is_write=False):
         self.q_num = q_num
         self.title = title
         self.objective = objective
         self.canonical_query = canonical_query
+        self.is_write = is_write
 
     def validate(self, db_manager, user_result):
         if not user_result or not user_result.get("success"):
             return False, "Error al ejecutar la consulta."
+        if self.is_write:
+            return bool(user_result.get("write_validated")), "Escritura evaluada por sus cambios."
 
         ref = db_manager.execute_query(self.canonical_query)
         if not ref.get("success"):
@@ -127,16 +110,14 @@ class ExamQuestion:
         if len(u_cols) != len(r_cols):
             return False, f"Cantidad de columnas incorrecta ({len(u_cols)} entregadas, se esperaban {len(r_cols)}: {', '.join(r_cols)})."
 
-        if set(u_cols) != set(r_cols):
-            return False, f"Las columnas no coinciden. Se esperaba ({', '.join(r_cols)})."
-
         u_rows = user_result.get("rows", [])
         r_rows = ref.get("rows", [])
 
         if len(u_rows) != len(r_rows):
             return False, f"Cantidad de filas incorrecta ({len(u_rows)} devueltas, se esperaban {len(r_rows)})."
 
-        col_indices = [u_cols.index(c) for c in r_cols]
+        col_indices = ([u_cols.index(c) for c in r_cols] if set(u_cols) == set(r_cols)
+                       else list(range(len(r_cols))))
 
         if "ORDER BY" in self.canonical_query.upper():
             for u_r, r_r in zip(u_rows, r_rows):
@@ -152,8 +133,8 @@ class ExamQuestion:
             def norm_row(r, indices):
                 return tuple(round(r[i], 2) if isinstance(r[i], float) else str(r[i]) for i in indices)
 
-            u_set = sorted([norm_row(r, col_indices) for r in u_rows])
-            r_set = sorted([norm_row(r, range(len(r_cols))) for r in r_rows])
+            u_set = Counter(norm_row(r, col_indices) for r in u_rows)
+            r_set = Counter(norm_row(r, range(len(r_cols))) for r in r_rows)
             if u_set != r_set:
                 return False, "Los datos devueltos no coinciden con los registros esperados."
 
@@ -171,6 +152,7 @@ class UniversityCurriculum:
         self.current_day = self.save.data.get("current_day", 1)
         
         self.current_task_idx = 0
+        self.last_xp_award = 0
         self.day_task_completed = False
         self.lecture_done_for_day = False
 
@@ -181,7 +163,27 @@ class UniversityCurriculum:
         self.exam_finished = False
         self.exam_final_grade = 1.0
 
+        for field in self.PROGRESS_FIELDS:
+            if field in self.save.data:
+                setattr(self, field, self.save.data[field])
         self._build_curriculum()
+        from game.course_extension import extend_curriculum
+        extend_curriculum(self)
+
+    PROGRESS_FIELDS = (
+        "current_year", "current_day", "current_task_idx", "day_task_completed",
+        "lecture_done_for_day", "exam_active", "exam_q_index", "exam_score",
+        "exam_finished", "exam_final_grade",
+    )
+
+    def save_progress(self):
+        self.save.data.update({field: getattr(self, field) for field in self.PROGRESS_FIELDS})
+        self.save.save()
+
+    def complete_lecture(self):
+        self.lecture_done_for_day = True
+        self.save.award_league_xp(50, f"lecture_{self.current_year}_{self.current_day}")
+        self.save_progress()
 
     def _build_curriculum(self):
         # Mapeo de Tareas Diarias por (Año, Día): Cada día tiene mínimo 2 ejercicios
@@ -228,7 +230,7 @@ class UniversityCurriculum:
                           "Muestra 'nombre' y 'promedio' de los 3 mejores estudiantes de toda la universidad usando LIMIT.",
                           "Usa ORDER BY promedio DESC LIMIT 3;",
                           "SELECT nombre, promedio FROM estudiantes ORDER BY promedio DESC LIMIT 3;",
-                          "¡Extraordinario! LIMIT restringe la cantidad exacta de registros transmitidos."),
+                          "¡Extraordinario! LIMIT establece un máximo de filas, si hay menos coincidencias devuelve menos"),
                 DailyTask(1, 4, 1, "Día 4 - Ejercicio 2/2: Cupos Críticos",
                           "Muestra 'nombre' y 'cupos' de las 2 materias con menos cupos disponibles (cupos > 0) ordenadas de menor a mayor.",
                           "Usa WHERE cupos > 0 ORDER BY cupos ASC LIMIT 2;",
@@ -383,7 +385,7 @@ class UniversityCurriculum:
                           "Usa EXPLAIN QUERY PLAN para verificar cómo SQLite optimiza la búsqueda por carrera en 'estudiantes'.",
                           "Usa EXPLAIN QUERY PLAN SELECT * FROM estudiantes WHERE carrera = 'Ingenieria Informatica';",
                           "EXPLAIN QUERY PLAN SELECT * FROM estudiantes WHERE carrera = 'Ingenieria Informatica';",
-                          "¡Felicidades! Entender el plan de ejecución separa a un programador junior de un verdadero Senior.", is_write=True)
+                          "¡Felicidades! Entender el plan de ejecución separa a un programador junior de un verdadero Senior.", is_write=False)
             ]
         }
 
@@ -394,8 +396,8 @@ class UniversityCurriculum:
                              "Muestra 'nombre' y 'oficina' de profesores del departamento 'Ciencias de la Computacion'.",
                              "SELECT nombre, oficina FROM profesores WHERE departamento = 'Ciencias de la Computacion';"),
                 ExamQuestion(2, "Año 1 - Q2: Materias por Carga",
-                             "Muestra todas las columnas de 'materias' ordenadas por 'creditos' de mayor a menor (DESC).",
-                             "SELECT * FROM materias ORDER BY creditos DESC;"),
+                             "Muestra todas las columnas de materias por creditos DESC; en empates, nombre ASC.",
+                             "SELECT * FROM materias ORDER BY creditos DESC, nombre ASC;"),
                 ExamQuestion(3, "Año 1 - Q3: El Mejor de Ciencia de Datos",
                              "Muestra 'nombre' y 'promedio' del alumno de 'Ciencia de Datos' con mejor promedio (1 fila).",
                              "SELECT nombre, promedio FROM estudiantes WHERE carrera = 'Ciencia de Datos' ORDER BY promedio DESC LIMIT 1;")
@@ -451,11 +453,16 @@ class UniversityCurriculum:
     def advance_daily_task(self):
         """Avanza al siguiente ejercicio del día si existe, o marca el día como completado."""
         tasks_today = self.tasks.get((self.current_year, self.current_day), [])
+        self.last_xp_award = 0
+        if tasks_today and not self.day_task_completed:
+            self.last_xp_award = self.save.award_league_xp(100, f"exercise_{self.current_year}_{self.current_day}_{self.current_task_idx}")
         if self.current_task_idx + 1 < len(tasks_today):
             self.current_task_idx += 1
+            self.save_progress()
             return False, self.get_current_task() # Quedan más ejercicios hoy
         else:
             self.day_task_completed = True
+            self.save_progress()
             return True, None # ¡Día completo!
 
     def get_current_exam_questions(self):
@@ -475,11 +482,15 @@ class UniversityCurriculum:
 
         if self.exam_q_index >= len(qs):
             self.exam_finished = True
-            grades = {0: 1.0, 1: 3.0, 2: 5.0, 3: 7.0}
-            self.exam_final_grade = grades.get(self.exam_score, 1.0)
+            ratio = self.exam_score / len(qs)
+            self.exam_final_grade = round(1.0 + 5.0 * ratio if ratio <= 0.6
+                                          else 4.0 + 7.5 * (ratio - 0.6), 1)
             self.save.data["last_grade"] = self.exam_final_grade
-            self.save.save()
+            if self.exam_final_grade >= 4.0:
+                self.save.award_league_xp(1000, f"exam_{self.current_year}")
+            self.save_progress()
             return True, self.exam_final_grade >= 4.0
+        self.save_progress()
         return False, False
 
     def finish_day(self):
@@ -489,12 +500,13 @@ class UniversityCurriculum:
             self.save.unlock_note(task.note_id)
 
         if self.current_day < 5:
+            self.save.award_league_xp(150, f"day_{self.current_year}_{self.current_day}")
             self.current_day += 1
             self.current_task_idx = 0
             self.day_task_completed = False
             self.lecture_done_for_day = False
             self.save.data["current_day"] = self.current_day
-            self.save.save()
+            self.save_progress()
             self.audio.play_bell()
 
     def advance_to_next_year(self):
@@ -512,13 +524,13 @@ class UniversityCurriculum:
 
             self.save.data["current_year"] = self.current_year
             self.save.data["current_day"] = 1
-            self.save.save()
+            self.save_progress()
             self.audio.play_success()
             return True # Avanzó de año
         else:
             # ¡Graduado de 4to Año!
             self.save.data["is_graduated"] = True
-            self.save.save()
+            self.save_progress()
             self.audio.play_success()
             return False # Titulado
 
@@ -533,11 +545,17 @@ class UniversityCurriculum:
         self.exam_score = 0
         self.exam_finished = False
 
+        if self.current_year == 2:
+            self.db.reset()
+        elif self.current_year == 4:
+            self.db.execute_query("DROP VIEW IF EXISTS vista_honor", allow_write=True)
+            self.db.execute_query("DROP INDEX IF EXISTS idx_carrera", allow_write=True)
+
         attempts_dict = self.save.data.setdefault("year_attempts", {})
         cur_att = attempts_dict.get(str(self.current_year), 1) + 1
         attempts_dict[str(self.current_year)] = cur_att
         self.save.data["current_day"] = 1
-        self.save.save()
+        self.save_progress()
         self.audio.play_bell()
 
     def get_year_attempts(self):

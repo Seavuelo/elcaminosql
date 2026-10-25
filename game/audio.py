@@ -1,6 +1,7 @@
 import numpy as np
 import pygame
 import os
+from game.narration import NarrationPlayer
 
 class AudioManager:
     """Gestiona la música de fondo lo-fi y los efectos de sonido satisfactorios."""
@@ -8,6 +9,9 @@ class AudioManager:
         self.config = config_manager
         self.music_enabled = False
         self.sfx_enabled = False
+        self.music_context = None
+        self.music_path = None
+        self.narrator = None
         
         try:
             if not pygame.mixer.get_init():
@@ -21,7 +25,10 @@ class AudioManager:
             self.music_enabled = True
             self._generate_sfx()
             self._setup_music()
+            self.narrator = NarrationPlayer(self.config)
         except Exception as e:
+            self.sfx_enabled = False
+            self.music_enabled = False
             print(f"[AudioManager] Audio no disponible: {e}")
 
     def _to_stereo_sound(self, mono_pcm_float):
@@ -33,15 +40,28 @@ class AudioManager:
         return pygame.sndarray.make_sound(pcm_16)
 
     def _setup_music(self):
-        bgm_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "bgm_lofi.wav")
-        if os.path.exists(bgm_path):
-            try:
-                pygame.mixer.music.load(bgm_path)
-                vol = float(self.config.get("music_volume", 0.25))
-                pygame.mixer.music.set_volume(vol)
-                pygame.mixer.music.play(-1)
-            except Exception as e:
-                print(f"[AudioManager] Error cargando BGM: {e}")
+        self.set_music_context("menu")
+
+    def set_music_context(self, context):
+        if not self.music_enabled or context == self.music_context:
+            return
+        tracks = {"menu": "music/bathroom_chill_loop.ogg", "study": "music/alex_morgan_jazz_loop.ogg",
+                  "exam": "music/a_kind_of_hope.mp3"}
+        root = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
+        path = os.path.join(root, tracks[context])
+        self.music_context = context
+        if not os.path.exists(path):
+            print(f"[AudioManager] Falta la pista {tracks[context]}, se usa la música del menú")
+            path = os.path.join(root, tracks["menu"])
+        if path == self.music_path:
+            return
+        try:
+            pygame.mixer.music.load(path)
+            pygame.mixer.music.set_volume(float(self.config.get("music_volume", 0.18)))
+            pygame.mixer.music.play(-1, fade_ms=1500)
+            self.music_path = path
+        except pygame.error as error:
+            print(f"[AudioManager] Error cargando música: {error}")
 
     def _generate_sfx(self):
         vol = float(self.config.get("sfx_volume", 0.70))
@@ -79,12 +99,30 @@ class AudioManager:
         self.snd_bell = self._to_stereo_sound(w_bell)
 
     def update_volumes(self):
-        music_vol = float(self.config.get("music_volume", 0.25))
+        music_vol = float(self.config.get("music_volume", 0.18))
         try:
             pygame.mixer.music.set_volume(music_vol)
         except Exception:
             pass
-        self._generate_sfx()
+        if self.sfx_enabled:
+            self._generate_sfx()
+        if getattr(self,'narrator',None):self.narrator.update()
+
+    def play_narration(self,slide):
+        if self.narrator:self.narrator.sync(slide)
+
+    def stop_narration(self):
+        if self.narrator:self.narrator.stop()
+
+    def update_narration(self,paused=False):
+        if self.narrator:self.narrator.update(paused)
+
+    def toggle_narration(self):
+        if self.narrator:self.narrator.toggle()
+
+    def repeat_narration(self,slide):
+        self.stop_narration()
+        self.play_narration(slide)
 
     def play_success(self):
         if self.sfx_enabled and hasattr(self, 'snd_success'):

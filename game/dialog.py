@@ -1,6 +1,8 @@
+from game.visuals import marco_portrait
 import pygame
+from game.rendering import draw, make_font
 from game.constants import *
-from game.ui_helpers import render_wrapped_text, draw_panel
+from game.ui_helpers import render_wrapped_text, draw_panel, paginate_text
 
 class DialogBox:
     def __init__(self, audio_manager=None):
@@ -10,16 +12,19 @@ class DialogBox:
         self.speaker = ""
         self.callback = None
         self.audio = audio_manager
-        self.font_title = pygame.font.Font(None, 15)
-        self.font_text = pygame.font.Font(None, 13)
-        self.font_hint = pygame.font.Font(None, 11)
+        self.font_title = make_font(15)
+        self.font_text = make_font(13)
+        self.font_hint = make_font(11)
 
-    def show(self, title, text, speaker="Prof. Turing", callback=None):
+    def show(self, title, text, speaker="Profesor Marco", callback=None, portrait=None):
         self.active = True
         self.title = title
         self.text = text
         self.speaker = speaker
         self.callback = callback
+        self.portrait = portrait
+        self.pages = paginate_text(text, self.font_text, 382, 56)
+        self.page_index = 0
         if self.audio:
             self.audio.play_key()
 
@@ -30,15 +35,21 @@ class DialogBox:
             self.callback = None
             cb()
 
+    def advance(self):
+        if self.page_index + 1 < len(self.pages):
+            self.page_index += 1
+        else:
+            self.close()
+
     def handle_event(self, event):
         if not self.active:
             return False
         if event.type == pygame.KEYDOWN:
             if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_e, pygame.K_ESCAPE]:
-                self.close()
+                self.advance()
                 return True
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            self.close()
+            self.advance()
             return True
         return False
 
@@ -59,25 +70,23 @@ class DialogBox:
         # Avatar
         avatar_x = box_x + 10
         avatar_y = box_y + 24
-        pygame.draw.rect(surface, (25, 35, 50), (avatar_x, avatar_y, 42, 54))
-        pygame.draw.rect(surface, COLOR_AMBER, (avatar_x, avatar_y, 42, 54), 1)
+        draw.rect(surface, (25, 35, 50), (avatar_x, avatar_y, 42, 54))
+        draw.rect(surface, COLOR_AMBER, (avatar_x, avatar_y, 42, 54), 1)
 
-        if "Turing" in self.speaker:
-            pygame.draw.rect(surface, (220, 220, 225), (avatar_x + 8, avatar_y + 4, 26, 12))
-            pygame.draw.rect(surface, (255, 205, 148), (avatar_x + 10, avatar_y + 12, 22, 20))
-            pygame.draw.circle(surface, (20, 25, 35), (avatar_x + 16, avatar_y + 20), 3, 1)
-            pygame.draw.circle(surface, (20, 25, 35), (avatar_x + 26, avatar_y + 20), 3, 1)
-            pygame.draw.rect(surface, (65, 85, 60), (avatar_x + 6, avatar_y + 34, 30, 18))
+        if self.portrait is not None:
+            surface.blit(pygame.transform.scale(self.portrait, (32, 40)), (avatar_x + 5, avatar_y + 6))
+        elif "Marco" in self.speaker:
+            marco_portrait(surface,pygame.Rect(avatar_x,avatar_y,42,54))
         else:
-            pygame.draw.rect(surface, (200, 50, 50), (avatar_x + 8, avatar_y + 8, 26, 38))
-            pygame.draw.rect(surface, (240, 240, 245), (avatar_x + 12, avatar_y + 12, 18, 28))
-            pygame.draw.line(surface, COLOR_AMBER, (avatar_x + 15, avatar_y + 18), (avatar_x + 26, avatar_y + 18), 2)
-            pygame.draw.line(surface, COLOR_AMBER, (avatar_x + 15, avatar_y + 24), (avatar_x + 24, avatar_y + 24), 2)
+            draw.rect(surface, (200, 50, 50), (avatar_x + 8, avatar_y + 8, 26, 38))
+            draw.rect(surface, (240, 240, 245), (avatar_x + 12, avatar_y + 12, 18, 28))
+            draw.line(surface, COLOR_AMBER, (avatar_x + 15, avatar_y + 18), (avatar_x + 26, avatar_y + 18), 2)
+            draw.line(surface, COLOR_AMBER, (avatar_x + 15, avatar_y + 24), (avatar_x + 24, avatar_y + 24), 2)
 
         # Texto del diálogo formateado con Word-Wrap riguroso
         text_rect = pygame.Rect(box_x + 60, box_y + 24, box_w - 70, 56)
-        render_wrapped_text(surface, self.text, text_rect, self.font_text, color=COLOR_WHITE, line_spacing=2, padding=0)
+        render_wrapped_text(surface, self.pages[self.page_index], text_rect, self.font_text, color=COLOR_WHITE, line_spacing=2, padding=0)
 
         # Indicador de continuación
-        hint_surf = self.font_hint.render("Pulsa [ESPACIO] o [ENTER] para continuar ▼", True, COLOR_CYAN)
-        surface.blit(hint_surf, (box_x + box_w - hint_surf.get_width() - 10, box_y + box_h - 13))
+        hint_surf = self.font_hint.render(f"{self.page_index + 1:02} / {len(self.pages):02}  ▸", True, COLOR_CYAN)
+        surface.blit(hint_surf, (box_x+60, box_y + box_h - 13))

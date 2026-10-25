@@ -1,5 +1,7 @@
 import pygame
+from game.rendering import draw, make_font
 from game.constants import *
+from game.appearance import *
 
 class Player:
     def __init__(self, x, y, custom_data=None):
@@ -22,126 +24,110 @@ class Player:
     def _generate_sprites(self):
         sprites = {}
 
-        # Paletas de colores dinámicas
-        skin_tones = [
-            (255, 205, 148), # Claro
-            (230, 175, 125), # Trigueño
-            (185, 125, 80),  # Moreno
-            (115, 75, 50)    # Ébano
-        ]
+        def color(key, palette):
+            return palette[self.custom_data.get(key, 0) % len(palette)][1]
 
-        hair_colors = [
-            (80, 45, 25),    # Castaño
-            (30, 25, 25),    # Negro
-            (240, 210, 80),  # Rubio
-            (200, 75, 30),   # Pelirojo
-            (0, 229, 255)    # Cyan Cyber
-        ]
-
-        shirt_colors = [
-            (30, 144, 255),  # Azul Hacker
-            (220, 50, 50),   # Rojo Carmesí
-            (36, 180, 100),  # Verde Terminal
-            (35, 40, 50),    # Negro Cyber
-            (150, 60, 200)   # Púrpura Mágico
-        ]
-
-        skin_idx = self.custom_data.get("skin_tone", 0) % len(skin_tones)
-        hair_idx = self.custom_data.get("hair_color", 0) % len(hair_colors)
-        shirt_idx = self.custom_data.get("shirt_color", 0) % len(shirt_colors)
+        c_skin = color("skin_tone", SKIN_TONES)
+        c_skin_shadow = tuple(int(c * 0.8) for c in c_skin)
+        c_hair = color("hair_color", HAIR_COLORS)
+        c_shirt = color("shirt_color", SHIRT_COLORS)
+        c_pants = color("pants_color", PANTS_COLORS)
+        c_shoes = color("shoe_color", SHOE_COLORS)
+        c_backpack = color("backpack_color", BACKPACK_COLORS)
+        c_eyes = color("eye_color", EYE_COLORS)
         style = self.custom_data.get("hair_style", 0)
+        outfit = self.custom_data.get("clothing_style", 0)
+        dark_shirt = tuple(int(c * 0.6) for c in c_shirt)
 
-        c_skin = skin_tones[skin_idx]
-        c_skin_shadow = (int(c_skin[0] * 0.8), int(c_skin[1] * 0.8), int(c_skin[2] * 0.8))
-        c_hair = hair_colors[hair_idx]
-        c_shirt = shirt_colors[shirt_idx]
-        c_pants = (40, 50, 75)
-        c_shoes = (30, 25, 20)
-        c_backpack = (220, 90, 40)
-
-        for direction in ["down", "up", "left", "right"]:
+        for direction in ("down", "up", "left", "right"):
             sprites[direction] = []
-            for frame in [0, 1, 2, 3]:
+            for frame in range(4):
                 surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-                
-                # Sombra
-                pygame.draw.ellipse(surf, (15, 20, 30, 100), (2, 17, 12, 3))
-
-                if direction == "down":
-                    # Cabello
-                    if style == 0: # Corto
-                        pygame.draw.rect(surf, c_hair, (4, 1, 8, 4))
-                        pygame.draw.rect(surf, c_hair, (3, 3, 2, 3))
-                        pygame.draw.rect(surf, c_hair, (11, 3, 2, 3))
-                    elif style == 1: # Largo / Coleta
-                        pygame.draw.rect(surf, c_hair, (3, 1, 10, 4))
-                        pygame.draw.rect(surf, c_hair, (2, 4, 3, 7))
-                        pygame.draw.rect(surf, c_hair, (11, 4, 3, 7))
-                    else: # Despeinado
-                        pygame.draw.rect(surf, c_hair, (3, 0, 10, 5))
-                        pygame.draw.rect(surf, c_hair, (5, 0, 6, 2))
-                    
-                    # Cara y ojos
-                    pygame.draw.rect(surf, c_skin, (4, 4, 8, 5))
-                    pygame.draw.rect(surf, (20, 25, 35), (5, 6, 2, 2))
-                    pygame.draw.rect(surf, (20, 25, 35), (9, 6, 2, 2))
-                    
-                    # Camiseta y mochila
-                    pygame.draw.rect(surf, c_shirt, (4, 9, 8, 6))
-                    pygame.draw.rect(surf, c_backpack, (3, 9, 1, 6))
-                    pygame.draw.rect(surf, c_backpack, (12, 9, 1, 6))
-                    
-                    # Pantalón y zapatos con animación de pasos
-                    pygame.draw.rect(surf, c_pants, (4, 15, 3, 3 + (1 if frame == 1 else 0)))
-                    pygame.draw.rect(surf, c_pants, (9, 15, 3, 3 + (1 if frame == 3 else 0)))
-                    pygame.draw.rect(surf, c_shoes, (4, 17 + (1 if frame == 1 else 0), 3, 2))
-                    pygame.draw.rect(surf, c_shoes, (9, 17 + (1 if frame == 3 else 0), 3, 2))
-
-                elif direction == "up":
-                    pygame.draw.rect(surf, c_hair, (3, 1, 10, 7))
-                    if style == 1:
-                        pygame.draw.rect(surf, c_hair, (6, 7, 4, 4)) # Coleta atrás
-                    pygame.draw.rect(surf, c_skin_shadow, (6, 8, 4, 1))
-                    pygame.draw.rect(surf, c_shirt, (4, 9, 8, 5))
-                    pygame.draw.rect(surf, c_backpack, (4, 9, 8, 6))
-                    pygame.draw.rect(surf, (180, 70, 30), (5, 11, 6, 3))
-                    pygame.draw.rect(surf, c_pants, (4, 15, 3, 3 + (1 if frame == 1 else 0)))
-                    pygame.draw.rect(surf, c_pants, (9, 15, 3, 3 + (1 if frame == 3 else 0)))
-                    pygame.draw.rect(surf, c_shoes, (4, 17 + (1 if frame == 1 else 0), 3, 2))
-                    pygame.draw.rect(surf, c_shoes, (9, 17 + (1 if frame == 3 else 0), 3, 2))
-
-                elif direction == "left":
-                    pygame.draw.rect(surf, c_hair, (4, 1, 8, 5))
-                    pygame.draw.rect(surf, c_skin, (3, 4, 6, 5))
-                    pygame.draw.rect(surf, (20, 25, 35), (4, 6, 2, 2))
-                    pygame.draw.rect(surf, c_shirt, (5, 9, 6, 6))
-                    pygame.draw.rect(surf, c_backpack, (10, 8, 3, 7))
-                    if frame in [1, 2]:
-                        pygame.draw.rect(surf, c_pants, (3, 15, 4, 3))
-                        pygame.draw.rect(surf, c_pants, (7, 14, 4, 3))
-                        pygame.draw.rect(surf, c_shoes, (2, 17, 4, 2))
-                        pygame.draw.rect(surf, c_shoes, (8, 16, 4, 2))
+                draw.ellipse(surf, (15, 20, 30, 100), (2, 17, 12, 3))
+                left_step = 1 if frame == 1 else 0
+                right_step = 1 if frame == 3 else 0
+                # Piernas separadas y manos fuera del torso para leer la silueta
+                draw.rect(surf, c_pants, (4, 14, 3, 4 + left_step))
+                draw.rect(surf, c_pants, (9, 14, 3, 4 + right_step))
+                draw.rect(surf, c_shoes, (3, 17 + left_step, 4, 2))
+                draw.rect(surf, c_shoes, (9, 17 + right_step, 4, 2))
+                if self.custom_data.get("shoe_style", 0) == 1:
+                    draw.rect(surf, c_shoes, (4, 16, 3, 2))
+                    draw.rect(surf, c_shoes, (9, 16, 3, 2))
+                draw.rect(surf, c_shirt, (4, 9, 8, 6))
+                if direction in ("up", "down"):
+                    for x, step in ((2, right_step), (12, left_step)):
+                        draw.rect(surf, c_shirt, (x, 9 + step, 2, 4))
+                        draw.rect(surf, c_skin, (x, 13 + step, 2, 2))
+                    draw.rect(surf, c_skin, (4, 3, 8, 6))
+                    if direction == "down":
+                        draw.rect(surf, c_backpack, (4, 9, 1, 5))
+                        draw.rect(surf, c_backpack, (11, 9, 1, 5))
+                        draw.rect(surf, c_eyes, (5, 6, 2, 2))
+                        draw.rect(surf, c_eyes, (9, 6, 2, 2))
+                        draw.line(surf, c_skin_shadow, (7, 8), (8, 8))
                     else:
-                        pygame.draw.rect(surf, c_pants, (5, 15, 5, 3))
-                        pygame.draw.rect(surf, c_shoes, (4, 17, 5, 2))
-
-                elif direction == "right":
-                    pygame.draw.rect(surf, c_hair, (4, 1, 8, 5))
-                    pygame.draw.rect(surf, c_skin, (7, 4, 6, 5))
-                    pygame.draw.rect(surf, (20, 25, 35), (10, 6, 2, 2))
-                    pygame.draw.rect(surf, c_shirt, (5, 9, 6, 6))
-                    pygame.draw.rect(surf, c_backpack, (3, 8, 3, 7))
-                    if frame in [1, 2]:
-                        pygame.draw.rect(surf, c_pants, (9, 15, 4, 3))
-                        pygame.draw.rect(surf, c_pants, (5, 14, 4, 3))
-                        pygame.draw.rect(surf, c_shoes, (10, 17, 4, 2))
-                        pygame.draw.rect(surf, c_shoes, (4, 16, 4, 2))
-                    else:
-                        pygame.draw.rect(surf, c_pants, (6, 15, 5, 3))
-                        pygame.draw.rect(surf, c_shoes, (7, 17, 5, 2))
-
+                        draw.rect(surf, c_backpack, (4, 10, 8, 5))
+                        draw.rect(surf, tuple(int(c * 0.7) for c in c_backpack), (5, 12, 6, 2))
+                else:
+                    facing_right = direction == "right"
+                    draw.rect(surf, c_skin, (7 if facing_right else 3, 3, 6, 6))
+                    draw.rect(surf, c_eyes, (10 if facing_right else 4, 6, 2, 2))
+                    draw.rect(surf, c_backpack, (3 if facing_right else 11, 9, 2, 6))
+                    arm_x = 9 if facing_right else 5
+                    swing = right_step - left_step
+                    draw.rect(surf, dark_shirt, (arm_x - 1, 9, 3, 4))
+                    draw.rect(surf, c_shirt, (arm_x, 9 + swing, 2, 4))
+                    draw.rect(surf, c_skin, (arm_x, 13 + swing, 3, 2))
+                if direction != "up":
+                    if outfit == 1:
+                        draw.rect(surf, dark_shirt, (6, 9, 4, 2))
+                        draw.line(surf, (230, 225, 210), (7, 11), (7, 12))
+                    elif outfit == 2:
+                        draw.rect(surf, (225, 225, 215), (7, 10, 2, 5))
+                        draw.rect(surf, dark_shirt, (5, 9, 2, 6))
+                    elif outfit == 3:
+                        for sy in (10, 12, 14):
+                            draw.line(surf, dark_shirt, (5, sy), (10, sy))
+                self._draw_hair(surf, direction, style, c_hair)
+                # Reflejos mínimos que conservan la silueta y los colores elegidos
+                for hx,hy in ((5,2),(6,2),(10,3)):
+                    if surf.get_at((hx,hy))[:3]==c_hair:
+                        surf.set_at((hx,hy),tuple(min(255,int(v*1.15)+8) for v in c_hair))
+                for sx in (5,6):
+                    if surf.get_at((sx,10))[:3]==c_shirt:
+                        surf.set_at((sx,10),tuple(min(255,int(v*1.12)+5) for v in c_shirt))
+                draw.rect(surf,tuple(int(v*.65) for v in c_pants),(4,15,1,2))
                 sprites[direction].append(surf)
         return sprites
+
+    @staticmethod
+    def _draw_hair(surface, direction, style, color):
+        if direction == "up":
+            height = 12 if style == 1 else (4 if style == 3 else 7)
+            draw.rect(surface, color, (3, 1, 10, height))
+        elif direction == "down":
+            draw.rect(surface, color, (3, 1 if style != 3 else 2, 10, 3 if style != 3 else 2))
+            if style != 3:
+                draw.rect(surface, color, (3, 3, 2, 3))
+                draw.rect(surface, color, (11, 3, 2, 3))
+            if style == 1:
+                draw.rect(surface, color, (2, 3, 2, 10))
+                draw.rect(surface, color, (12, 3, 2, 10))
+        else:
+            right = direction == "right"
+            back_x = 3 if right else 9
+            draw.rect(surface, color, (4, 1 if style != 3 else 2, 8, 3 if style != 3 else 2))
+            draw.rect(surface, color, (back_x, 3, 4, 10 if style == 1 else 5))
+            if style != 3:
+                draw.rect(surface, color, (8 if right else 5, 3, 3, 2))
+        if style == 2:
+            draw.polygon(surface, color, [(3, 3), (4, 0), (6, 2), (8, 0), (10, 2), (12, 1), (12, 4)])
+        elif style == 4:
+            for hx in (4, 7, 10):
+                draw.circle(surface, color, (hx, 2), 2)
+            if direction in ("left", "right"):
+                draw.circle(surface, color, (4 if direction == "right" else 11, 6), 2)
 
     def update(self, keys, colliders):
         dx, dy = 0, 0

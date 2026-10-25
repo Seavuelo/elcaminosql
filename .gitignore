@@ -9,6 +9,12 @@ __pycache__/
 # Distribución y compilación
 build/
 dist/
+*.log
+*.tmp
+savegame.json
+config.json
+.env
+.env.*
 *.egg-info/
 
 # Archivos de configuración de editores
@@ -21,3 +27,25 @@ dist/
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Capturas locales de revision
+.preview/
+
+# Instrucciones y archivos locales de agentes
+AGENTS.md
+agents.md
+Agents.md
+SKILL.md
+skill.md
+Skill.md
+CLAUDE.md
+GEMINI.md
+.agents/
+.codex/
+.claude/
+.cursor/
+skills/
+
+# Notas de trabajo locales, no forman parte del juego
+/DIALOGOS_REVISION.md
+/ROADMAP.md

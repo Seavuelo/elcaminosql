@@ -1,275 +1,131 @@
+from game.visuals import panel, centered, backdrop, GOLD, MINT, MUTED
 import pygame
+from game.rendering import draw, make_font
 from game.constants import *
+from game.appearance import *
+from game.player import Player
 from game.ui_helpers import draw_panel, render_wrapped_text
 
+
 class CharacterCustomizer:
+    """Editor con lista desplazable y el mismo sprite que se utiliza al jugar."""
+    OPTIONS = {
+        "skin_tone": ("Piel", SKIN_TONES),
+        "hair_color": ("Cabello", HAIR_COLORS),
+        "hair_style": ("Peinado", HAIR_STYLES),
+        "shirt_color": ("Color de ropa", SHIRT_COLORS),
+        "eye_color": ("Ojos", EYE_COLORS),
+        "pants_color": ("Pantalón", PANTS_COLORS),
+        "shoe_color": ("Color zapatos", SHOE_COLORS),
+        "clothing_style": ("Vestuario", CLOTHING_STYLES),
+        "shoe_style": ("Calzado", SHOE_STYLES),
+        "backpack_color": ("Mochila", BACKPACK_COLORS),
+    }
+
     def __init__(self, audio_manager, on_finish_callback):
         self.audio = audio_manager
         self.on_finish_callback = on_finish_callback
         self.active = False
-
-        self.font_title = pygame.font.Font(None, 20)
-        self.font_field = pygame.font.Font(None, 16)
-        self.font_hint = pygame.font.Font(None, 13)
-        self.font_preview = pygame.font.Font(None, 12)
-        self.font_role = pygame.font.Font(None, 13)
-
-        # Paletas y opciones
-        self.skin_tones = [
-            ("Claro", (255, 205, 148)),
-            ("Trigueño", (230, 175, 125)),
-            ("Moreno", (185, 125, 80)),
-            ("Ébano", (115, 75, 50))
-        ]
-
-        self.hair_colors = [
-            ("Castaño", (80, 45, 25)),
-            ("Negro", (30, 25, 25)),
-            ("Rubio", (240, 210, 80)),
-            ("Pelirojo", (200, 75, 30)),
-            ("Cyan Cyber", (0, 229, 255))
-        ]
-
-        self.hair_styles = [
-            "Corto Clásico",
-            "Largo con Coleta",
-            "Despeinado Moderno"
-        ]
-
-        self.shirt_colors = [
-            ("Azul Hacker", (30, 144, 255)),
-            ("Rojo Carmesí", (220, 50, 50)),
-            ("Verde Terminal", (36, 180, 100)),
-            ("Negro Cyber", (35, 40, 50)),
-            ("Púrpura Mágico", (150, 60, 200))
-        ]
-
-        self.genders = [
-            ("Masculino", "male", "Bienvenido", "Alumno"),
-            ("Femenino", "female", "Bienvenida", "Alumna"),
-            ("Neutro", "neutral", "Bienvenide", "Estudiante")
-        ]
-
-        # Estado actual de edición
+        self.font_title = make_font(18)
+        self.font_field = make_font(16)
+        self.font_hint = make_font(13)
         self.player_name = "Alex"
         self.typing_name = False
+        self.genders = [("Masculino", "male"), ("Femenino", "female"), ("Neutro", "neutral")]
         self.gender_idx = 0
-        self.skin_idx = 0
-        self.hair_col_idx = 0
-        self.hair_style_idx = 0
-        self.shirt_col_idx = 0
-
+        self.values = {key: 0 for key in CUSTOM_FIELDS}
+        self.fields = ["name", "gender", *CUSTOM_FIELDS, "confirm"]
         self.selected_field = 0
-        self.fields = ["name", "gender", "skin", "hair_col", "hair_style", "shirt_col", "confirm"]
+        self.preview_direction = "down"
+        self.preview = None
 
-    def open(self):
+    def _data(self):
+        return {"name": self.player_name.strip() or "Novato",
+                "gender": self.genders[self.gender_idx][1], **self.values}
+
+    def _refresh_preview(self):
+        self.preview = Player(0, 0, self._data())
+
+    def open(self, data=None):
         self.active = True
         self.selected_field = 0
-
-    def close(self):
-        self.active = False
+        self.typing_name = False
+        if data:
+            self.player_name = data.get("player_name", "Alex")
+            self.gender_idx = next((i for i, entry in enumerate(self.genders)
+                                    if entry[1] == data.get("gender")), 0)
+            self.values = {key: data.get(key, 0) % len(self.OPTIONS[key][1]) for key in CUSTOM_FIELDS}
+        self._refresh_preview()
 
     def handle_event(self, event):
-        if not self.active:
+        if not self.active or event.type != pygame.KEYDOWN:
             return False
-
-        if event.type == pygame.KEYDOWN:
-            field = self.fields[self.selected_field]
-
-            if field == "name" and self.typing_name:
-                if event.key == pygame.K_RETURN:
-                    self.typing_name = False
-                    self.audio.play_key()
-                    return True
-                elif event.key == pygame.K_BACKSPACE:
-                    if len(self.player_name) > 0:
-                        self.player_name = self.player_name[:-1]
-                        self.audio.play_key()
-                    return True
-                elif event.unicode and len(self.player_name) < 14 and event.unicode.isalnum() or event.unicode == " ":
-                    self.player_name += event.unicode
-                    self.audio.play_key()
-                    return True
-
-            if event.key == pygame.K_UP:
-                self.selected_field = (self.selected_field - 1) % len(self.fields)
+        field = self.fields[self.selected_field]
+        if field == "name" and self.typing_name:
+            if event.key == pygame.K_RETURN:
                 self.typing_name = False
-                self.audio.play_key()
-                return True
-
-            elif event.key == pygame.K_DOWN:
-                self.selected_field = (self.selected_field + 1) % len(self.fields)
+            elif event.key == pygame.K_BACKSPACE:
+                self.player_name = self.player_name[:-1]
+            elif event.key in (pygame.K_UP, pygame.K_DOWN):
                 self.typing_name = False
-                self.audio.play_key()
+            elif len(self.player_name) < 14 and (event.unicode.isalnum() or event.unicode == " "):
+                self.player_name += event.unicode
+            else:
                 return True
-
-            elif event.key == pygame.K_LEFT:
-                self.audio.play_key()
-                if field == "gender":
-                    self.gender_idx = (self.gender_idx - 1) % len(self.genders)
-                elif field == "skin":
-                    self.skin_idx = (self.skin_idx - 1) % len(self.skin_tones)
-                elif field == "hair_col":
-                    self.hair_col_idx = (self.hair_col_idx - 1) % len(self.hair_colors)
-                elif field == "hair_style":
-                    self.hair_style_idx = (self.hair_style_idx - 1) % len(self.hair_styles)
-                elif field == "shirt_col":
-                    self.shirt_col_idx = (self.shirt_col_idx - 1) % len(self.shirt_colors)
+            if self.typing_name or event.key == pygame.K_RETURN:
                 return True
-
-            elif event.key == pygame.K_RIGHT:
-                self.audio.play_key()
-                if field == "gender":
-                    self.gender_idx = (self.gender_idx + 1) % len(self.genders)
-                elif field == "skin":
-                    self.skin_idx = (self.skin_idx + 1) % len(self.skin_tones)
-                elif field == "hair_col":
-                    self.hair_col_idx = (self.hair_col_idx + 1) % len(self.hair_colors)
-                elif field == "hair_style":
-                    self.hair_style_idx = (self.hair_style_idx + 1) % len(self.hair_styles)
-                elif field == "shirt_col":
-                    self.shirt_col_idx = (self.shirt_col_idx + 1) % len(self.shirt_colors)
-                return True
-
-            elif event.key in [pygame.K_RETURN, pygame.K_SPACE]:
-                if field == "name":
-                    self.typing_name = not self.typing_name
-                    self.audio.play_key()
-                    return True
-                elif field == "confirm":
-                    self.audio.play_success()
-                    self.active = False
-                    final_name = self.player_name.strip() if self.player_name.strip() else "Novato"
-                    g_info = self.genders[self.gender_idx]
-                    self.on_finish_callback({
-                        "name": final_name,
-                        "gender": g_info[1],
-                        "pronoun_welcome": g_info[2],
-                        "title_role": g_info[3],
-                        "skin_tone": self.skin_idx,
-                        "hair_color": self.hair_col_idx,
-                        "hair_style": self.hair_style_idx,
-                        "shirt_color": self.shirt_col_idx
-                    })
-                    return True
-
-        return False
+        if event.key in (pygame.K_UP, pygame.K_DOWN):
+            self.selected_field = (self.selected_field + (1 if event.key == pygame.K_DOWN else -1)) % len(self.fields)
+        elif event.key in (pygame.K_LEFT, pygame.K_RIGHT):
+            delta = 1 if event.key == pygame.K_RIGHT else -1
+            if field == "gender":
+                self.gender_idx = (self.gender_idx + delta) % len(self.genders)
+            elif field in self.OPTIONS:
+                self.values[field] = (self.values[field] + delta) % len(self.OPTIONS[field][1])
+                self._refresh_preview()
+        elif event.key == pygame.K_r:
+            directions = ["down", "left", "up", "right"]
+            self.preview_direction = directions[(directions.index(self.preview_direction) + 1) % 4]
+        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+            if field == "name":
+                self.typing_name = not self.typing_name
+            elif field == "confirm":
+                self.active = False
+                self.audio.play_success()
+                self.on_finish_callback(self._data())
+        else:
+            return False
+        self.audio.play_key()
+        return True
 
     def draw(self, surface, tick):
         if not self.active:
             return
-
-        # Fondo cyberpunk de matrícula
-        surface.fill((12, 16, 26))
-
-        # Panel Principal
-        panel_rect = pygame.Rect(16, 12, 448, 276)
-        draw_panel(surface, panel_rect, bg_color=(16, 22, 35, 250), border_color=COLOR_CYAN, border_width=2,
-                   title="CREACIÓN DE ESTUDIANTE  |  MATRÍCULA UNIVERSITARIA", font=self.font_title, title_color=COLOR_CYAN)
-
-        # 1. Vista Previa del Personaje a la Izquierda (Pixel Art aumentado)
-        prev_box = pygame.Rect(30, 42, 100, 160)
-        pygame.draw.rect(surface, (22, 30, 46), prev_box)
-        pygame.draw.rect(surface, (45, 65, 95), prev_box, 1)
-
-        p_label = self.font_preview.render("VISTA PREVIA", True, COLOR_AMBER)
-        surface.blit(p_label, (42, 46))
-
-        # Renderizar sprite escalado x3
-        sprite_surf = pygame.Surface((16, 20), pygame.SRCALPHA)
-        self._render_character_preview(sprite_surf)
-        big_sprite = pygame.transform.scale(sprite_surf, (48, 60))
-        surface.blit(big_sprite, (56, 75))
-
-        # Etiqueta con el nombre y pronombre
-        n_surf = self.font_field.render(self.player_name if self.player_name else "...", True, COLOR_WHITE)
-        surface.blit(n_surf, (prev_box.centerx - n_surf.get_width() // 2, 150))
-        
-        role_str = self.genders[self.gender_idx][3]
-        r_surf = self.font_role.render(f"[{role_str}]", True, (0, 229, 255))
-        surface.blit(r_surf, (prev_box.centerx - r_surf.get_width() // 2, 168))
-
-        # 2. Formulario de Personalización a la Derecha
-        form_x = 145
-        form_y = 42
-        row_h = 28
-
-        labels = [
-            ("Nombre:", f"[ {self.player_name} ]" + (" |" if self.typing_name and (tick // 25) % 2 == 0 else "")),
-            ("Identidad:", f"< {self.genders[self.gender_idx][0]} >"),
-            ("Tono de Piel:", f"< {self.skin_tones[self.skin_idx][0]} >"),
-            ("Color de Cabello:", f"< {self.hair_colors[self.hair_col_idx][0]} >"),
-            ("Estilo de Cabello:", f"< {self.hair_styles[self.hair_style_idx]} >"),
-            ("Color de Ropa:", f"< {self.shirt_colors[self.shirt_col_idx][0]} >"),
-            ("Confirmar", "[ ¡CONFIRMAR MATRÍCULA Y EMPEZAR! ]")
-        ]
-
-        for i, (name, val) in enumerate(labels):
-            y = form_y + (i * row_h)
-            is_sel = (i == self.selected_field)
-
-            if is_sel:
-                pygame.draw.rect(surface, (25, 45, 75), (form_x - 4, y - 2, 310, 22))
-                pygame.draw.rect(surface, COLOR_AMBER, (form_x - 4, y - 2, 310, 22), 1)
-                text_col = COLOR_AMBER
-                cursor_txt = "> "
+        backdrop(surface)
+        draw_panel(surface, pygame.Rect(12, 10, 456, 280), title="PERSONALIZA TU ESTUDIANTE", font=self.font_title)
+        panel(surface,pygame.Rect(24,40,116,213),(27,45,56),GOLD)
+        for yy in range(49,173,12):draw.line(surface,(35,56,64),(29,yy),(134,yy))
+        draw.ellipse(surface,(17,31,42),(39,156,86,11))
+        sprite = self.preview.sprites[self.preview_direction][(tick // 16) % 4]
+        surface.blit(pygame.transform.scale(sprite, (80, 100)), (42, 67))
+        render_wrapped_text(surface, self.player_name or "...", pygame.Rect(28, 176, 108, 30), self.font_field)
+        centered(surface,"Vista del juego",pygame.Rect(28,213,108,36),self.font_hint,MUTED)
+        start = min(max(0, self.selected_field - 6), max(0, len(self.fields) - 8))
+        for row, field in enumerate(self.fields[start:start + 8]):
+            index = start + row
+            rect = pygame.Rect(150, 40 + row * 26, 306, 24)
+            selected = index == self.selected_field
+            panel(surface,rect,(31,51,64) if selected else (21,35,48),GOLD if selected else MINT,shadow=False,selected=selected)
+            if field == "name":
+                label, value = "Nombre", self.player_name + (" |" if self.typing_name else "")
+            elif field == "gender":
+                label, value = "Identidad", self.genders[self.gender_idx][0]
+            elif field == "confirm":
+                label, value = "Guardar", "Confirmar"
             else:
-                text_col = COLOR_WHITE
-                cursor_txt = "  "
-
-            if i < 6:
-                s_name = self.font_field.render(cursor_txt + name, True, text_col)
-                surface.blit(s_name, (form_x, y + 2))
-
-                val_col = COLOR_GREEN if (i == 0 and self.typing_name) else (COLOR_CYAN if is_sel else (180, 210, 240))
-                s_val = self.font_field.render(val, True, val_col)
-                surface.blit(s_val, (form_x + 130, y + 2))
-            else:
-                # Botón de Confirmación
-                btn_surf = self.font_field.render(val, True, COLOR_GREEN if is_sel else COLOR_WHITE)
-                surface.blit(btn_surf, (form_x + 20, y + 3))
-
-        # Pista al pie
-        hint_txt = "[FLECHAS] Navegar y Cambiar  |  [ENTER] Escribir / Confirmar Matrícula"
-        hint_surf = self.font_hint.render(hint_txt, True, COLOR_GRAY)
-        surface.blit(hint_surf, (panel_rect.centerx - hint_surf.get_width() // 2, panel_rect.bottom - 16))
-
-    def _render_character_preview(self, surf):
-        skin = self.skin_tones[self.skin_idx][1]
-        hair = self.hair_colors[self.hair_col_idx][1]
-        shirt = self.shirt_colors[self.shirt_col_idx][1]
-        style = self.hair_style_idx
-
-        # Sombra
-        pygame.draw.ellipse(surf, (15, 20, 30, 100), (2, 17, 12, 3))
-
-        # Rostro
-        pygame.draw.rect(surf, skin, (4, 4, 8, 5))
-        pygame.draw.rect(surf, (20, 25, 35), (5, 6, 2, 2))
-        pygame.draw.rect(surf, (20, 25, 35), (9, 6, 2, 2))
-
-        # Cabello según estilo
-        if style == 0: # Corto
-            pygame.draw.rect(surf, hair, (4, 1, 8, 4))
-            pygame.draw.rect(surf, hair, (3, 3, 2, 3))
-            pygame.draw.rect(surf, hair, (11, 3, 2, 3))
-        elif style == 1: # Largo / Coleta
-            pygame.draw.rect(surf, hair, (3, 1, 10, 4))
-            pygame.draw.rect(surf, hair, (2, 4, 3, 8))
-            pygame.draw.rect(surf, hair, (11, 4, 3, 8))
-        else: # Despeinado
-            pygame.draw.rect(surf, hair, (3, 0, 10, 5))
-            pygame.draw.rect(surf, hair, (5, 0, 6, 2))
-            pygame.draw.rect(surf, hair, (12, 2, 2, 4))
-
-        # Ropa
-        pygame.draw.rect(surf, shirt, (4, 9, 8, 6))
-        # Mochila naranja
-        pygame.draw.rect(surf, (220, 90, 40), (3, 9, 1, 6))
-        pygame.draw.rect(surf, (220, 90, 40), (12, 9, 1, 6))
-
-        # Pantalón y Zapatos
-        pygame.draw.rect(surf, (40, 50, 75), (4, 15, 3, 3))
-        pygame.draw.rect(surf, (40, 50, 75), (9, 15, 3, 3))
-        pygame.draw.rect(surf, (30, 25, 20), (4, 17, 3, 2))
-        pygame.draw.rect(surf, (30, 25, 20), (9, 17, 3, 2))
+                label, options = self.OPTIONS[field]
+                value = options[self.values[field]]
+                value = value[0] if isinstance(value, tuple) else value
+            render_wrapped_text(surface, label, pygame.Rect(rect.x + 6, rect.y, 120, 24), self.font_field, padding=4)
+            render_wrapped_text(surface, str(value), pygame.Rect(rect.x + 126, rect.y, 176, 24), self.font_field,
+                                color=COLOR_CYAN if selected else COLOR_WHITE, padding=4)

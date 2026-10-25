@@ -1,0 +1,38 @@
+EL CAMINO SQL — v0.2.0-alpha.1
+VERSIÓN EXPERIMENTAL — «una beta de la beta»
+
+PARA JUGAR
+1. Extrae TODO el ZIP en una carpeta de tu computador
+2. Abre ElCaminoSQL.exe
+3. Mantén la carpeta _internal al lado del ejecutable
+
+No necesitas instalar Python, SQLite, Kokoro ni otras dependencias
+Después de descargarlo puedes jugar sin conexión
+Paquete para Windows x64, preparado para Windows 10 y 11
+
+F10 o el botón Controles muestra la ayuda de la pantalla actual
+F7 activa o desactiva la voz de Marco en las clases introductorias
+F8 repite el fragmento de voz y O abre los ajustes en esas clases
+
+ESTADO DEL PROYECTO
+Esto es una primera versión para probar y dar comentarios
+Puede contener errores y detalles pendientes de claridad, equilibrio o diseño
+La voz del profesor está incluida solo en las cinco clases introductorias
+No es una versión final ni una edición estable
+
+PARTIDAS
+Tu progreso se guarda fuera de esta carpeta, en
+%USERPROFILE%\.config\sql-quest\
+Actualizar o extraer el ZIP no borra esa carpeta
+La opción Nueva partida sí reemplaza tu progreso después de confirmarlo
+
+PROBLEMAS Y COMENTARIOS
+https://github.com/Seavuelo/elcaminosql/issues
+Indica la versión, qué estabas haciendo y cómo repetir el problema
+
+Este ejecutable no tiene firma digital
+Descarga las actualizaciones desde el repositorio de Seavuelo
+El archivo SHA256SUMS.txt permite comprobar la integridad del ZIP
+
+Créditos: CREDITS.md
+Bibliotecas y licencias: THIRD_PARTY_NOTICES.md y LICENSES/

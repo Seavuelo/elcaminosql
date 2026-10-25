@@ -3,6 +3,17 @@ import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "universidad.db")
 
+def add_practice_data(conn):
+    """Casos de uno-a-muchos, ausencia de relaciones y valores pendientes."""
+    conn.execute("UPDATE profesores SET nombre='Profesor Marco' WHERE nombre='Dr. Alan Turing'")
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name='tutorias'").fetchone():
+        return
+    conn.execute("CREATE TABLE tutorias (id INTEGER PRIMARY KEY, estudiante_id INTEGER NOT NULL, tema TEXT NOT NULL, asistencia INTEGER, FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id))")
+    conn.executemany("INSERT INTO tutorias VALUES (?, ?, ?, ?)", [
+        (1, 1, "Filtros", 1), (2, 1, "Ordenamiento", 0),
+        (3, 2, "Subconsultas", None), (4, 3, "Filtros", 1),
+    ])
+
 def create_and_seed_db(db_path=DB_PATH):
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -98,12 +109,13 @@ def create_and_seed_db(db_path=DB_PATH):
     """)
 
     profesores_data = [
-        ("Dr. Alan Turing", "Ciencias de la Computacion", "Lab 204"),
+        ("Profesor Marco", "Ciencias de la Computacion", "Lab 204"),
         ("Dra. Ada Lovelace", "Arquitectura de Software", "Lab 201"),
         ("Prof. Edgar Codd", "Sistemas de Informacion", "Lab 105"),
     ]
     cur.executemany("INSERT INTO profesores (nombre, departamento, oficina) VALUES (?, ?, ?);", profesores_data)
 
+    add_practice_data(conn)
     conn.commit()
     conn.close()
     print(f"Base de datos creada exitosamente en: {db_path}")

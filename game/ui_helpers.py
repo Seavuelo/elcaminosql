@@ -1,4 +1,5 @@
 import pygame
+from game.rendering import draw, make_font
 from game.constants import *
 
 _CACHED_TABLE_FONT = None
@@ -7,226 +8,190 @@ _CACHED_BADGE_FONT = None
 def _get_badge_font():
     global _CACHED_BADGE_FONT
     if _CACHED_BADGE_FONT is None:
-        _CACHED_BADGE_FONT = pygame.font.Font(None, 11)
+        _CACHED_BADGE_FONT = make_font(11)
     return _CACHED_BADGE_FONT
 
 def _get_default_table_font():
     global _CACHED_TABLE_FONT
     if _CACHED_TABLE_FONT is None:
-        _CACHED_TABLE_FONT = pygame.font.Font(None, 14)
+        _CACHED_TABLE_FONT = make_font(14)
     return _CACHED_TABLE_FONT
 
+def wrap_text_lines(text, font, width):
+    lines = []
+    for paragraph in str(text).split("\n"):
+        line = ""
+        for word in paragraph.split():
+            while font.size(word)[0] > width:
+                if line:
+                    lines.append(line)
+                    line = ""
+                end = 1
+                while end < len(word) and font.size(word[:end + 1])[0] <= width:
+                    end += 1
+                lines.append(word[:end])
+                word = word[end:]
+            candidate = f"{line} {word}" if line else word
+            if line and font.size(candidate)[0] > width:
+                lines.append(line)
+                line = word
+            else:
+                line = candidate
+        lines.append(line)
+    return lines
+
+
+def paginate_text(text, font, width, height, line_spacing=2):
+    lines = wrap_text_lines(text, font, width)
+    count = max(1, (height + line_spacing) // (font.get_linesize() + line_spacing))
+    return ["\n".join(lines[i:i + count]) for i in range(0, len(lines), count)] or [""]
+
+
+def fit_text(text, font, width):
+    if font.size(text)[0] <= width:
+        return text
+    while text and font.size(text + "...")[0] > width:
+        text = text[:-1]
+    return text + "..."
+
+
 def render_wrapped_text(surface, text, rect, font, color=COLOR_WHITE, line_spacing=2, padding=4):
-    """
-    Renderiza texto garantizando que NUNCA se salga del marco (Word-wrap riguroso).
-    Maneja saltos de línea explícitos ('\\n'), saltos automáticos por ancho de palabra
-    y partición de palabras extra-largas si superan el ancho disponible.
-    """
-    x, y = rect.x + padding, rect.y + padding
-    max_w, max_h = rect.width - (padding * 2), rect.height - (padding * 2)
-    if max_w <= 10 or max_h <= 10:
+    width = rect.width - padding * 2
+    if width <= 0:
         return
+    old_clip = surface.get_clip()
+    surface.set_clip(old_clip.clip(rect))
+    y = rect.y + padding
+    for line in wrap_text_lines(text, font, width):
+        if y + font.get_linesize() > rect.bottom - padding:
+            break
+        surface.blit(font.render(line, True, color), (rect.x + padding, y))
+        y += font.get_linesize() + line_spacing
+    surface.set_clip(old_clip)
 
-    current_y = y
-    line_h = font.get_linesize()
-
-    paragraphs = str(text).split("\n")
-    for para in paragraphs:
-        raw_words = para.split(" ")
-        words = []
-        # Asegurar que ninguna palabra individual sobrepase max_w
-        for w in raw_words:
-            if not w:
-                continue
-            if font.size(w)[0] > max_w:
-                chunk = ""
-                for char in w:
-                    if font.size(chunk + char)[0] <= max_w:
-                        chunk += char
-                    else:
-                        if chunk:
-                            words.append(chunk)
-                        chunk = char
-                if chunk:
-                    words.append(chunk)
-            else:
-                words.append(w)
-
-        current_line = []
-        for word in words:
-            test_line = " ".join(current_line + [word])
-            line_w = font.size(test_line)[0]
-            if line_w <= max_w:
-                current_line.append(word)
-            else:
-                if current_line:
-                    line_surf = font.render(" ".join(current_line), True, color)
-                    if current_y + line_h <= y + max_h:
-                        surface.blit(line_surf, (x, current_y))
-                        current_y += line_h + line_spacing
-                    else:
-                        return
-                current_line = [word]
-
-        if current_line:
-            line_surf = font.render(" ".join(current_line), True, color)
-            if current_y + line_h <= y + max_h:
-                surface.blit(line_surf, (x, current_y))
-                current_y += line_h + line_spacing
-            else:
-                return
 
 def draw_panel(surface, rect, bg_color=(14, 18, 28, 240), border_color=COLOR_CYAN, border_width=1, title="", font=None, title_color=COLOR_AMBER):
-    """Dibuja un panel retro profesional con borde y encabezado opcional."""
-    if len(bg_color) == 4:
-        s = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        s.fill(bg_color)
-        surface.blit(s, (rect.x, rect.y))
-    else:
-        pygame.draw.rect(surface, bg_color, rect)
-        
-    pygame.draw.rect(surface, border_color, rect, border_width)
+    from game.visuals import panel, mix
+    rect=pygame.Rect(rect)
+    panel(surface,rect,bg_color,border_color)
 
     if title and font:
         header_h = 20
-        pygame.draw.rect(surface, (25, 35, 55), (rect.x + 1, rect.y + 1, rect.width - 2, header_h))
-        pygame.draw.line(surface, border_color, (rect.x, rect.y + header_h), (rect.x + rect.width, rect.y + header_h), 1)
-        t_surf = font.render(title, True, title_color)
+        draw.rect(surface, mix(bg_color,border_color,.09), (rect.x + 2, rect.y + 2, rect.width - 4, header_h-2),border_radius=3)
+        draw.line(surface, mix(bg_color,border_color,.28), (rect.x+6, rect.y + header_h), (rect.right-6, rect.y + header_h), 1)
+        t_surf = font.render(fit_text(title, font, rect.width - 16), True, title_color)
         surface.blit(t_surf, (rect.x + 8, rect.y + 4))
 
+def fitted_text_layout(text, font, width, min_size=8):
+    """Reduce primero la fuente y luego envuelve, sin eliminar caracteres"""
+    text = str(text)
+    point_size = getattr(font, "point_size", 12)
+    selected = font
+    for size in range(point_size, min_size - 1, -1):
+        selected = font if size == point_size else make_font(size)
+        if selected.size(text)[0] <= width:
+            break
+    lines = wrap_text_lines(text, selected, max(1, width))
+    return selected, lines
+
+
+def draw_fitted_text(surface, text, rect, font, color=COLOR_WHITE, padding=4):
+    rect = pygame.Rect(rect)
+    selected, lines = fitted_text_layout(text, font, rect.width - padding * 2)
+    height = len(lines) * selected.get_linesize()
+    top = rect.y + max(padding, (rect.height - height) // 2)
+    render_wrapped_text(surface, "\n".join(lines), pygame.Rect(rect.x + padding, top,
+                        max(1, rect.width - padding * 2), height), selected,
+                        color=color, line_spacing=0, padding=0)
+
+
 def draw_sql_grid_table(surface, rect, columns, rows, col_types=None, font=None, max_rows=7):
-    """
-    Renderizador visual de base de datos tipo DBeaver / Hoja de Cálculo:
-    - Columna de índice de fila (#)
-    - Etiquetas de tipo de dato [INT], [TXT], [NUM]
-    - Cuadrícula con líneas divisorias
-    - Rayado de cebra
-    - Valores NULL estilizados
-    """
-    if font is None:
-        font = _get_default_table_font()
-    font_badge = _get_badge_font()
-
-    x, y, w, h = rect.x, rect.y, rect.width, rect.height
-
-    # Fondo base del visor
-    pygame.draw.rect(surface, (12, 16, 25), rect)
-    pygame.draw.rect(surface, (45, 65, 95), rect, 1)
-
+    font = font or _get_default_table_font()
+    x, y, w, h = rect
+    parent_clip = surface.get_clip()
+    surface.set_clip(parent_clip.clip(rect))
+    draw.rect(surface, (12, 16, 25), rect)
+    draw.rect(surface, (45, 65, 95), rect, 1)
     if not columns:
-        empty_msg = font.render("(No hay columnas ni datos para mostrar)", True, COLOR_GRAY)
-        surface.blit(empty_msg, (x + 15, y + 20))
+        draw_fitted_text(surface, "No hay columnas ni datos para mostrar", rect, font, COLOR_GRAY)
+        surface.set_clip(parent_clip)
         return
 
-    # Ancho de la columna de índice (#)
-    row_num_w = 26
-    
-    # Calcular anchos de columna adaptativos según el contenido real y nombres
-    avail_w = w - row_num_w - 4
-    num_cols = len(columns)
-    visible_rows = rows[:max_rows]
+    def value_text(value):
+        return "NULL" if value is None else str(value)
 
-    # Calcular ancho deseado por columna (mínimo el ancho del encabezado + padding)
-    col_widths = []
-    for c_idx, col_name in enumerate(columns):
-        header_w = font.size(str(col_name))[0] + 16
-        val_w = 0
-        for r in visible_rows:
-            if c_idx < len(r):
-                val_str = f"{r[c_idx]:.1f}" if isinstance(r[c_idx], float) else str(r[c_idx] if r[c_idx] is not None else "NULL")
-                val_w = max(val_w, font.size(val_str)[0] + 14)
-        col_widths.append(max(60, header_w, val_w))
+    index_width = 24
+    available = max(1, w - index_width - 4)
+    desired = [max(40, font.size(str(name))[0] + 12,
+                   max((font.size(value_text(row[i]))[0] + 12 for row in rows[:max_rows]
+                        if i < len(row)), default=0)) for i, name in enumerate(columns)]
+    total = sum(desired)
+    widths = [max(1, int(width * available / total)) for width in desired]
+    widths[-1] += available - sum(widths)
+    positions = []
+    current = x + index_width
+    for width in widths:
+        positions.append(current)
+        current += width
 
-    total_req_w = sum(col_widths)
-    if total_req_w < avail_w:
-        # Distribuir espacio sobrante proporcionalmente
-        extra = avail_w - total_req_w
-        for i in range(num_cols):
-            col_widths[i] += int(extra * (col_widths[i] / total_req_w))
-    elif total_req_w > avail_w:
-        # Escalar respetando un mínimo legible
-        scale = avail_w / float(total_req_w)
-        min_each = max(50, avail_w // num_cols)
-        col_widths = [max(min_each, int(cw * scale)) for cw in col_widths]
+    def content_height(values):
+        heights = []
+        for text, width in zip(values, widths):
+            cell_font, lines = fitted_text_layout(text, font, max(1, width - 8))
+            heights.append(len(lines) * cell_font.get_linesize() + 8)
+        return max(17, *heights)
 
-    # Calcular posiciones X de cada columna
-    col_x_positions = []
-    curr_cx = x + row_num_w
-    for cw in col_widths:
-        col_x_positions.append(curr_cx)
-        curr_cx += cw
-
-    header_h = 22
-    row_h = 17
-
-    # 1. Cabecera estilo IDE de base de datos
-    pygame.draw.rect(surface, (24, 36, 56), (x + 1, y + 1, w - 2, header_h))
-    pygame.draw.line(surface, (60, 85, 125), (x, y + header_h), (x + w, y + header_h), 1)
-
-    # Celda encabezado de índice (#)
-    idx_header = font.render("#", True, (120, 140, 170))
-    surface.blit(idx_header, (x + 8, y + 5))
-    pygame.draw.line(surface, (60, 85, 125), (x + row_num_w, y), (x + row_num_w, y + h), 1)
-
-    # Encabezados de columnas (con recorte seguro para no desbordar)
-    old_clip = surface.get_clip()
-    for c_idx, col_name in enumerate(columns):
-        col_x = col_x_positions[c_idx]
-        col_w = col_widths[c_idx]
-
-        # Configurar recorte a la celda
-        cell_rect = pygame.Rect(col_x + 2, y, col_w - 4, header_h)
-        surface.set_clip(cell_rect)
-        c_title = font.render(str(col_name), True, (0, 230, 255))
-        surface.blit(c_title, (col_x + 6, y + 5))
-        surface.set_clip(old_clip)
-
-        # Línea divisoria vertical de columna
-        if c_idx < num_cols - 1:
-            pygame.draw.line(surface, (40, 60, 90), (col_x + col_w, y), (col_x + col_w, y + h - 16), 1)
-
-    # 2. Filas de Datos (Celdas tipo Excel / Base de datos)
-    for r_idx, row in enumerate(visible_rows):
-        cur_y = y + header_h + 1 + (r_idx * row_h)
-        
-        # Rayado de cebra
-        row_bg = (16, 22, 34) if r_idx % 2 == 0 else (21, 28, 44)
-        pygame.draw.rect(surface, row_bg, (x + 1, cur_y, w - 2, row_h))
-        
-        # Línea divisoria horizontal entre filas
-        pygame.draw.line(surface, (30, 42, 65), (x + 1, cur_y + row_h), (x + w - 1, cur_y + row_h), 1)
-
-        # Número de fila (# 1, # 2, ...)
-        r_num = font.render(str(r_idx + 1), True, (100, 120, 150))
-        surface.blit(r_num, (x + 6, cur_y + 2))
-
-        # Valores de celda
-        for c_idx, val in enumerate(row):
-            if c_idx >= num_cols:
-                break
-            col_x = col_x_positions[c_idx]
-            col_w = col_widths[c_idx]
-            
-            if val is None:
-                val_surf = font.render("NULL", True, (255, 120, 100))
-            elif isinstance(val, float):
-                val_surf = font.render(f"{val:.1f}", True, (160, 240, 180))
-            else:
-                val_surf = font.render(str(val), True, (230, 240, 250))
-            
-            cell_rect = pygame.Rect(col_x + 2, cur_y, col_w - 4, row_h)
-            surface.set_clip(cell_rect)
-            surface.blit(val_surf, (col_x + 6, cur_y + 2))
-            surface.set_clip(old_clip)
-
-    # 3. Barra de Estado inferior (Footer informativo)
+    header_h = max(22, content_height(columns))
     footer_y = y + h - 16
-    pygame.draw.rect(surface, (18, 25, 40), (x + 1, footer_y, w - 2, 15))
-    pygame.draw.line(surface, (45, 65, 95), (x, footer_y), (x + w, footer_y), 1)
-    
-    total_rows = len(rows)
-    footer_txt = f"Mostrando {len(visible_rows)} de {total_rows} fila(s)  |  {num_cols} columna(s)"
-    if total_rows > max_rows:
-        footer_txt += f"  (▼ {total_rows - max_rows} más ocultas)"
-    f_surf = font.render(footer_txt, True, COLOR_AMBER)
-    surface.blit(f_surf, (x + 8, footer_y + 1))
+    draw.rect(surface, (24, 36, 56), (x + 1, y + 1, w - 2, header_h))
+    draw_fitted_text(surface, "#", pygame.Rect(x + 1, y, index_width - 2, header_h), font, COLOR_GRAY)
+    for i, column in enumerate(columns):
+        draw_fitted_text(surface, column, pygame.Rect(positions[i], y, widths[i], header_h), font, COLOR_CYAN)
+    draw.line(surface, (60, 85, 125), (x, y + header_h), (x + w, y + header_h))
+
+    shown = 0
+    row_y = y + header_h + 1
+    for index, row in enumerate(rows[:max_rows]):
+        values = [value_text(value) for value in row]
+        row_h = content_height(values)
+        if row_y + row_h > footer_y:
+            break
+        background = (16, 22, 34) if index % 2 == 0 else (21, 28, 44)
+        draw.rect(surface, background, (x + 1, row_y, w - 2, row_h))
+        draw_fitted_text(surface, str(index + 1), pygame.Rect(x + 1, row_y, index_width - 2, row_h), font, COLOR_GRAY)
+        for col_index, value in enumerate(row[:len(columns)]):
+            color = (255, 120, 100) if value is None else ((160, 240, 180) if isinstance(value, (int, float)) else COLOR_WHITE)
+            draw_fitted_text(surface, value_text(value), pygame.Rect(positions[col_index], row_y,
+                              widths[col_index], row_h), font, color)
+        draw.line(surface, (30, 42, 65), (x + 1, row_y + row_h), (x + w - 1, row_y + row_h))
+        row_y += row_h
+        shown += 1
+    for col_x in positions:
+        draw.line(surface, (40, 60, 90), (col_x, y), (col_x, footer_y))
+    draw.rect(surface, (18, 25, 40), (x + 1, footer_y, w - 2, 15))
+    footer = f"Mostrando {shown} de {len(rows)} filas | {len(columns)} columnas"
+    draw_fitted_text(surface, footer, pygame.Rect(x + 4, footer_y, w - 8, 15), font, COLOR_AMBER, padding=1)
+    surface.set_clip(parent_clip)
+
+
+def paginate_grid_rows(columns, rows, font, width, height):
+    """Usa las mismas medidas del grid para no ocultar registros en una clase"""
+    def fits(chunk):
+        desired = [max(40, font.size(str(name))[0]+12, max((font.size('NULL' if row[i] is None else str(row[i]))[0]+12 for row in chunk), default=0)) for i,name in enumerate(columns)]
+        available = width-28
+        widths = [max(1,int(value*available/sum(desired))) for value in desired]
+        widths[-1] += available-sum(widths)
+        def row_height(values):
+            sizes = []
+            for value,w in zip(values,widths):
+                selected,lines = fitted_text_layout('NULL' if value is None else str(value),font,max(1,w-8))
+                sizes.append(len(lines)*selected.get_linesize()+8)
+            return max(17,*sizes)
+        return max(22,row_height(columns)) + 1 + sum(row_height(row) for row in chunk) <= height-16
+    pages, current = [], []
+    for row in rows:
+        if current and (len(current) == 5 or not fits(current+[row])):
+            pages.append(current)
+            current = []
+        current.append(row)
+    return pages+[current] if current else pages or [[]]

@@ -6,9 +6,11 @@ CONFIG_PATH = os.path.expanduser("~/.config/sql-quest/config.json")
 
 DEFAULT_CONFIG = {
     "screen_mode": "windowed",  # "windowed", "fullscreen", "borderless"
-    "resolution": [960, 600],   # [960, 600], [1280, 720], [1366, 768]
-    "music_volume": 0.25,       # 0.0 a 1.0
+    "resolution": [960, 600],   # También HD, 1366x768 y Full HD 1920x1080
+    "music_volume": 0.18,       # 0.0 a 1.0
     "sfx_volume": 0.70,         # 0.0 a 1.0
+    "narration_enabled": True,
+    "narration_volume": 0.85,
     "current_day": 1,           # 1 a 5
     "semester_attempts": 1,     # Cuántas veces ha cursado el ramo
 }
