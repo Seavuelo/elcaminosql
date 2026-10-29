@@ -41,7 +41,7 @@ def main():
     build.mkdir(exist_ok=True);dist.mkdir(exist_ok=True)
     env=os.environ.copy();env.update(SDL_VIDEODRIVER='dummy',SDL_AUDIODRIVER='dummy')
     run(sys.executable,'-m','unittest','discover','-s','tests',env=env)
-    numeric=tuple(int(part) for part in VERSION.split('-')[0].split('.'))+(1,)
+    numeric=tuple(int(part) for part in VERSION.split('-')[0].split('.'))+(int(VERSION.rsplit('.',1)[-1]),)
     info=build/'version_info.txt'
     info.write_text(f"""VSVersionInfo(
  ffi=FixedFileInfo(filevers={numeric!r},prodvers={numeric!r},mask=0x3f,flags=0x2,OS=0x40004,fileType=0x1,subtype=0x0,date=(0,0)),
@@ -61,7 +61,7 @@ def main():
         '--add-data',str(ROOT/'database'/'universidad.db')+':database',ROOT/'main.py')
     app=dist/'portable'/'ElCaminoSQL'
     for source,name in [('packaging/LEEME.txt','LEEME.txt'),('CREDITS.md','CREDITS.md'),
-                        ('docs/releases/v0.2.0-alpha.1.md','NOVEDADES.md'),
+                        (f'docs/releases/v{VERSION}.md','NOVEDADES.md'),
                         ('packaging/THIRD_PARTY_NOTICES.md','THIRD_PARTY_NOTICES.md')]:
         shutil.copyfile(ROOT/source,app/name)
     copy_licenses(app/'LICENSES')

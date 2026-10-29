@@ -1,0 +1,35 @@
+EL CAMINO SQL
+0.3.0-beta.1 - Beta gratuita de Seavuelo
+
+Extrae toda la carpeta y abre ElCaminoSQL.exe
+Conserva las bibliotecas incluidas junto al ejecutable
+No necesitas Python ni instalar Godot para jugar
+
+Camina con WASD, acércate a un objeto y presiona E
+El botón Controles reúne las instrucciones
+Esc cierra la interfaz actual
+
+Marco explica en la pizarra, después trabajas en tu computador
+Tareas indica lo que falta para cerrar la jornada
+Habla con Marco al terminar, vuelve a casa por la puerta
+y duerme cuando quieras avanzar al siguiente día
+
+El teléfono incluye Nexo y Liga de Dioses
+El escritorio permite practicar, revisar apuntes, investigar,
+exportar proyectos y comprar decoración para tu casa
+Estas actividades son opcionales
+
+La voz solo acompaña las clases del profesor, puedes desactivarla
+en Ajustes, ahí también puedes cambiar la pantalla y los volúmenes
+
+Guardado: %APPDATA%/ElCaminoSQL-Godot/study.json
+Respaldo: study.json.bak
+Las partidas anteriores compatibles se copian sin modificar
+los archivos originales de Pygame
+Nueva partida pide confirmación y reemplaza el progreso de Godot
+
+Esta beta puede tener errores, el juego no requiere conexión
+Controles > Licencias y componentes incluye los créditos
+
+Proyecto personal, siempre gratuito
+https://github.com/Seavuelo/elcaminosql

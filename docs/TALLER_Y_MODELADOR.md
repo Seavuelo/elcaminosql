@@ -14,7 +14,7 @@ El cuaderno se abre con N, F1 o el botón Cuaderno del estudio, el teléfono se 
 
 ## Kashut
 
-Diez preguntas por jornada, 50 en total, con 25 segundos por pregunta, el podio depende de los aciertos y no de la rapidez
+Diez preguntas por jornada, 50 en total, con 25 a 45 segundos por pregunta según el texto que debe leerse, el podio depende de los aciertos y no de la rapidez
 
 - 10 aciertos: primer lugar
 - 8 o 9: segundo lugar
@@ -33,7 +33,9 @@ La XP de Liga de Dioses es 40 por completar, 20 por acierto y un bono de 30, 60 
 
 El lienzo aprovecha la pantalla completa, con zoom de 20% a 200%, desplazamiento al arrastrar el fondo, entidades movibles y Ctrl+Z para deshacer
 
-Nueva entidad abre propiedades con General y Atributos, se usan nombres en singular y MAYÚSCULAS, sin espacios, tildes ni ñ, el guion bajo separa palabras
+Nueva entidad abre propiedades con General y Atributos, para las entidades usamos singular y MAYÚSCULAS, como ESTUDIANTE, y los atributos pueden escribirse en minúsculas, como id o fecha_nacimiento, el guion bajo separa palabras y usamos anio en lugar de año
+
+Aplicar atributo conserva el dato en el borrador y deja vacío el nombre para continuar con el siguiente, Guardar entidad confirma el conjunto, las ayudas muestran ejemplos de longitud, precisión y escala
 
 Cada atributo tiene tipo de origen, longitud o precisión y escala cuando corresponda, UID primario y obligatoriedad, varios atributos pueden formar un UID compuesto
 
@@ -85,8 +87,11 @@ Validaci?n final: 118 pruebas aprobadas, compilaci?n sin errores y revisi?n visu
 
 Las pizarras introductorias cambian de esquema y foco por concepto, se revelan progresivamente al sonar la tiza, cada jornada muestra una transición de dos segundos con Semana Introductoria y su día
 
-Las cinco clases introductorias tienen 69 audios Santa en assets/voice/marco_intro, el guion puntuado vive en game/intro_voice_scripts.py y el texto visible se conserva sin cambios
+Las cinco clases introductorias y las veinte de la carrera tienen 287 audios Santa en assets/voice/marco_intro, los guiones tienen puntuación independiente del texto visible y sus identificadores dependen del contenido, añadir una diapositiva no desplaza las voces de las demás
 
 F7 activa o desactiva la voz, F8 repite el fragmento y O abre ajustes con volumen propio, la narración se corta al cambiar de diapositiva o salir y se pausa al abrir paneles o perder el foco, la música baja mientras habla Marco
 
 Para regenerar: ejecutar tools/build_intro_narration.py --export con el entorno del juego y después tools/build_intro_narration.py con el entorno de preparación, los modelos y dependencias Kokoro permanecen en .preview y no se necesitan al jugar
+
+
+La estación de estudio muestra la clase, las diez preguntas, su retroalimentación y el taller por separado, los requisitos del modelador se pueden recorrer por páginas y una edición posterior invalida la comprobación del modelo anterior

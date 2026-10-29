@@ -20,31 +20,31 @@ QUESTIONS = {
  ('Si el promedio aún no está calculado...',('Inventamos un cero','Podemos permitir NULL','Borramos a la persona','Ponemos el nombre'),1,'Si el atributo es opcional puede permanecer desconocido hasta tener el dato'),
  ('El código 0012 puede guardarse como texto para...',('Hacerlo más grande','Sumar sus letras','Convertirlo a fecha','Conservar los ceros iniciales'),3,'Que un valor contenga dígitos no significa que debamos calcular con él'),
  ('BLOB representa...',('Bytes, por ejemplo un archivo','Un nombre de relación','Una clave obligatoria','Un promedio'),0,'BLOB almacena datos binarios'),
- ('¿Qué debemos evitar en los nombres del taller?',('El guion bajo','Las mayúsculas','Los espacios, tildes y ñ','Las letras'),2,'Usamos nombres simples y consistentes, el guion bajo separa palabras'),
- ('Elegir un tipo numérico garantiza una nota de 1 a 7...',('Siempre','Solo los viernes','Nunca hay números','No, hace falta validar ese rango'),3,'El tipo y las reglas del negocio son decisiones diferentes'),
- ('¿Qué nombre sigue la convención del taller?',('Fecha nacimiento','FECHA_NACIMIENTO','fecha-nacimiento','FECHA NACIMIENTO'),1,'Usamos mayúsculas y guion bajo, sin espacios ni tildes'),
+ ('Al nombrar tablas y atributos, ¿qué conviene evitar para escribir nombres sencillos y portables?',('El guion bajo','Las letras minúsculas','Espacios, tildes y ñ','Separar palabras con _'),2,'Usamos fecha_nacimiento en lugar de fecha nacimiento, y anio en lugar de año, el guion bajo separa palabras sin introducir espacios'),
+ ('Si permitimos números en nota, ¿queda garantizado que solo se guarden notas de 1 a 7?',('Sí, cualquier número es una nota válida','Sí, REAL conoce las notas del curso','Sí, si escribimos el nombre en mayúsculas','No, también debemos comprobar el rango'),3,'REAL puede guardar 6.3 y también 8, comprobar que el valor esté entre 1 y 7 requiere otra validación, el tipo por sí solo no alcanza'),
+ ('Queremos un atributo para la fecha de nacimiento, ¿qué nombre es claro, sin espacios y en minúsculas?',('Fecha nacimiento','fecha_nacimiento','FECHA_NACIMIENTO','fecha-nacimiento'),1,'fecha_nacimiento separa palabras con _, es legible y sigue el estilo de atributos en minúsculas que explicamos, otros estilos son posibles si se usan de forma consistente'),
 ],
 3: [
- ('¿Para qué sirve el UID primario?',('Cambiar colores','Identificar cada instancia','Ordenar sillas','Guardar todos los nombres juntos'),1,'El identificador distingue una instancia de otra'),
+ ('El UID primario es el identificador del modelo, ¿para qué sirve?',('Elegir el orden de pantalla','Distinguir un registro de otro','Contar cuántas filas hay','Hacer obligatorio cada atributo'),1,'Dos personas llamadas Carlos pueden tener ID 11 y 12, el UID permite reconocer a cada una aunque compartan nombre'),
  ('Al convertir, el UID primario se transforma en...',('PRIMARY KEY','Un comentario','Un promedio','Un nombre de archivo'),0,'El modelo relacional usa la clave primaria para identificar sus filas'),
- ('¿Puede repetirse la clave primaria completa?',('Sí, con otro nombre','Sí, con otra nota','No','Solo por la mañana'),2,'La combinación de valores de la PK debe ser única'),
+ ('ID es la clave primaria y ya existe ID 12, ¿aceptamos otro ID 12?',('Sí, con otro nombre','Sí, con otra nota','No, repetiría el identificador','Sí, si cambia de asiento'),2,'Cambiar el nombre no evita repetir la clave primaria, ID 13 sí sería un identificador nuevo'),
  ('Dos estudiantes pueden llamarse igual...',('Nunca','Sí, el nombre no es necesariamente único','Solo si comparten ID','Solo en otra tabla'),1,'Un nombre puede repetirse y también puede cambiar, por eso usamos identificadores'),
  ('Obligatorio significa...',('La tabla tiene diez filas','Tiene un índice','Está en mayúsculas','No permite NULL'),3,'Un atributo obligatorio exige un valor conocido al guardar el registro'),
  ('Opcional significa que el atributo...',('Puede permitir NULL','Se borra solo','Siempre vale cero','Es una clave primaria'),0,'Opcional permite dejar el dato sin conocer, si el dominio lo permite'),
- ('Si dos atributos forman el UID...',('Ambos son nombres','Nunca se puede convertir','La combinación identifica la instancia','Los datos se copian a todas las tablas'),2,'Una clave compuesta utiliza varios atributos juntos'),
+ ('La PK de una línea es PEDIDO_ID + NUMERO_LINEA, ¿qué debe ser único?',('Cada pedido por separado','Cada número de línea por separado','La pareja completa de valores','El nombre del artículo'),2,'Los pedidos 10 y 20 pueden tener línea 1, lo que no puede repetirse es la misma pareja, por ejemplo pedido 10 y línea 1'),
  ('¿El ID tiene que ser el número del asiento?',('Sí','No, debe ser un identificador estable','Solo si hay dos PCs','Solo si es obligatorio'),1,'El identificador pertenece al registro, la posición en pantalla puede cambiar'),
  ('Si ID es UID, NOMBRE también debe ser único...',('Siempre','Solo si está escrito en verde','Nunca puede ser texto','No, son restricciones diferentes'),3,'Marcar ID como UID no hace únicos los demás atributos'),
  ('¿Qué conviene hacer con un promedio pendiente?',('Permitirlo como dato opcional','Inventar una calificación','Usarlo como ID','Copiar el promedio de otro'),0,'La obligatoriedad debe responder al significado del dato'),
 ],
 4: [
- ('Una FK suele guardar...',('Una copia de todos los datos','El identificador de otra fila','Una imagen','La posición del mouse'),1,'La referencia conecta filas mediante sus claves'),
+ ('TUTORIA.ESTUDIANTE_ID es una FK, ¿qué guarda?',('El nombre y promedio completos','El ID de la persona a quien pertenece','El número total de tutorías','Su posición en pantalla'),1,'Si guarda 11, buscamos ID 11 en ESTUDIANTE para encontrar a esa persona, la FK no copia su nombre ni crea una persona nueva'),
  ('Un estudiante con varias tutorías es...',('1:N','1:1','Una sola columna','Un tipo DATE'),0,'Una persona puede aparecer en varias tutorías, cada tutoría tiene su dueño'),
  ('¿Qué puede repetirse en las tutorías?',('La PK completa','El nombre de la tabla','La FK del estudiante','Dos PK idénticas'),2,'Varias tutorías pueden referirse al mismo estudiante'),
  ('Una relación N:M se convierte normalmente mediante...',('Borrar las entidades','Una sola columna','Cambiar todos los nombres','Una tabla intermedia'),3,'La tabla intermedia contiene referencias a ambos lados'),
  ('Para una relación 1:N, una tercera tabla...',('Siempre es obligatoria','Normalmente no es necesaria','Nunca se permite','Reemplaza al padre'),1,'La clave del lado uno puede pasar al lado muchos'),
  ('En una relación 1:1 generamos...',('Una FK que además es única','Una FK repetida sin límite','Solo un comentario','Una tabla por cada atributo'),0,'UNIQUE evita que varias filas del destino se vinculen con el mismo origen'),
  ('Una relación identificadora incorpora...',('Todos los datos del padre','El color de la entidad','La clave del padre a la clave del hijo','El nombre del profesor'),2,'Solo la clave participa en la identificación, no se copia toda la entidad'),
- ('Si el origen es opcional, la FK puede...',('No tener nombre','No existir como columna','Ser siempre primaria','Aceptar NULL'),3,'El destino puede existir sin tener todavía un origen relacionado'),
+ ('Si una tutoría puede existir sin estudiante asignado, su FK puede...',('Inventar un ID','Desaparecer de la tabla','Repetir la PK de la tutoría','Aceptar NULL'),3,'NULL permite expresar que aún no hay estudiante asignado, si guardamos un ID conocido debe apuntar a una persona existente'),
  ('Una FK garantiza que cada padre tenga hijos...',('Siempre','No, ese mínimo necesita otra validación','Solo si es VARCHAR','Solo si está en mayúsculas'),1,'Una FK impide referencias inexistentes, no obliga al padre a tener filas hijas'),
  ('Los nombres tiene y pertenece describen...',('Los dos sentidos de la relación','Dos columnas nuevas','Dos PK','Dos tipos numéricos'),0,'Los roles explican cómo se lee la asociación en ambos sentidos'),
 ],
@@ -60,4 +60,13 @@ QUESTIONS = {
  ('Un diseño que construye tablas sin errores...',('Ya tiene todos los casos de negocio probados','Todavía necesita probar datos y reglas del negocio','No puede editarse','Ya no necesita nombres'),1,'Validar la estructura es necesario, también importan los casos reales y las reglas del dominio'),
  ('Antes de pasar al SQL, conviene poder explicar...',('Solo los colores','Solo el tamaño de las cajas','Qué representa cada tabla y cómo se relaciona','Una consulta de memoria'),2,'Comprender el modelo ayuda a pensar qué información necesita cada consulta'),
 ]
+}
+
+
+DIAGRAMS={
+1:['table','attributes','pipeline','pipeline','table','entities','entities','attributes','table','entities'],
+2:['types','precision','types','null','null','codes','binary','names','range','names'],
+3:['key','conversion','key','table','null','null','identifying','key','key','null'],
+4:['relation','relation','relation','junction','relation','relation','identifying','null','relation','reparent'],
+5:['entities','conversion','conversion','checks','relation','types','types','reparent','checks','entities'],
 }

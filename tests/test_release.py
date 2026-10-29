@@ -20,5 +20,5 @@ class ReleaseTests(unittest.TestCase):
             result=json.loads(report.read_text(encoding='utf8'))
             self.assertTrue(result['success'],result.get('error'))
             self.assertEqual(result['version'],VERSION)
-            self.assertEqual(len(result['checks']),4)
+            self.assertEqual(len(result['checks']),5)
         self.assertEqual(seed.read_bytes(),before)

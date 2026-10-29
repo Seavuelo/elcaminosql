@@ -1,4 +1,4 @@
-from game.visuals import backdrop, desk, window, plant, board, monitor_details, marco_sprite
+from game.visuals import backdrop, desk, window, plant, board, monitor_details, marco_sprite, teacher_notice, chair, netbook
 import pygame
 from game.rendering import draw, make_font
 import math
@@ -223,7 +223,7 @@ class World:
         draw.rect(art,(232,224,196),(217,68,13,10))
         draw.line(art,(134,154,144),(219,71),(226,71))
         draw.rect(art,(45,65,75),(241,67,17,12))
-        draw.rect(art,(83,145,139),(243,69,13,8))
+        netbook(art,243,63)
         draw.rect(art,(197,173,119),(261,68,5,6))
         for dx,dy in self.desks:
             desk(art,(dx,dy,80,28))
@@ -250,6 +250,7 @@ class World:
 
         # Escritorio del profesor
         self.colliders.append(pygame.Rect(210, 65, 60, 25))
+        self.colliders.append(pygame.Rect(230,48,17,24))
         # Estantería de libros
         self.colliders.append(pygame.Rect(410, 55, 45, 30))
 
@@ -443,13 +444,9 @@ class World:
         marco_sprite(surface,prof_x,prof_y-2)
 
         # Indicador animado sobre el profesor
-        if not curriculum.lecture_done_for_day or (curriculum.day_task_completed and curriculum.current_day < 5):
-            pulse = int(4 * math.sin(tick * 0.2))
-            badge_color = (0, 255, 136) if curriculum.day_task_completed else COLOR_AMBER
-            draw.circle(surface, badge_color, (prof_x + 8, prof_y - 10 + pulse), 6)
-            symbol = "✓" if curriculum.day_task_completed else "!"
-            p_excl = self.font_tiny.render(symbol, True, COLOR_BLACK)
-            surface.blit(p_excl, (prof_x + 5, prof_y - 14 + pulse))
+        ready=curriculum.day_task_completed if curriculum.current_day<5 else curriculum.exam_finished
+        if not curriculum.lecture_done_for_day or ready:
+            teacher_notice(surface,(prof_x+8,prof_y-10),tick,ready)
 
         # 4. Monitores interactivos y personajes sentados
 
@@ -464,6 +461,8 @@ class World:
             for pc_offset in [12, 48]:
                 px = dx + pc_offset
                 py = dy + 3
+
+                chair(surface,(px+3,py+20,15,16))
 
                 # PC del jugador (Mesa 1, offset 12)
                 if is_player_desk and pc_offset == 12:
@@ -480,13 +479,6 @@ class World:
                         (px + 14, arrow_y)
                     ])
 
-                    # Placa identificadora con el nombre del jugador
-                    plate_w = 42
-                    plate_rect = pygame.Rect(dx + 2, dy + 22, plate_w, 8)
-                    draw.rect(surface, (30, 40, 60), plate_rect)
-                    draw.rect(surface, COLOR_AMBER, plate_rect, 1)
-                    name_tag = self.font_name_tag.render(pname[:8], True, (255, 255, 255))
-                    surface.blit(name_tag, (plate_rect.x + 2, plate_rect.y))
                 else:
                     # PC de compañero
                     cm = cm_map.get((dx, dy, pc_offset))
@@ -513,8 +505,6 @@ class World:
                         bob = int(math.sin(tick * 0.08 + px))
                         pose = "right" if cm.state in ("packing", "shutdown") else "up"
                         surface.blit(cm.sprites[pose][0], (px + 4, py + 9 + bob))
-                        name_tag = self.font_name_tag.render(cm.name, True, COLOR_WHITE)
-                        surface.blit(name_tag, (px + 10 - name_tag.get_width() // 2, py + 32))
                         if cm.state == "packing":
                             reach = int(math.sin(cm.elapsed * 10) * 3)
                             draw.line(surface, cm.shirt_color, (px + 12, py + 19), (px + 17, py + 18 + reach), 2)
@@ -525,6 +515,3 @@ class World:
         for cm in sorted(self.classmates, key=lambda student: student.y):
             if cm.is_present(cur_year):
                 cm.draw_walking(surface)
-                if cm.state in ("standing", "walking"):
-                    tag = self.font_name_tag.render(cm.name, True, COLOR_WHITE)
-                    surface.blit(tag, (round(cm.x) + 8 - tag.get_width() // 2, round(cm.y) - 8))

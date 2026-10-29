@@ -87,10 +87,13 @@ class PedagogyTests(unittest.TestCase):
 
     def test_boundary_and_null_examples_have_expected_results(self):
         items = demonstration(1,2)
-        self.assertNotIn(('Valentina Rojas',5.5),items[1]['rows'])
-        self.assertIn(('Valentina Rojas',5.5),items[2]['rows'])
-        self.assertEqual(demonstration(3,1)[1]['rows'],[(4,3)])
-        self.assertEqual(demonstration(4,1)[3]['rows'],[(None,)])
+        by_title={item['title']:item for item in items}
+        self.assertNotIn(('Valentina Rojas',5.5),by_title['Comparar un promedio']['rows'])
+        self.assertIn(('Valentina Rojas',5.5),by_title['Incluir el valor del límite']['rows'])
+        counts=next(item for item in demonstration(3,1) if item['title']=='Contar filas o datos conocidos')
+        self.assertEqual(counts['rows'],[(4,3)])
+        exclusion=next(item for item in demonstration(4,1) if item['title']=='La precaución con NOT IN')
+        self.assertEqual(exclusion['rows'],[(None,)])
 
     def test_table_pages_never_drop_rows(self):
         for year in range(1,5):

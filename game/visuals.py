@@ -1,6 +1,7 @@
 """Acabados visuales compartidos, sin estado de juego ni zonas interactivas"""
 from functools import lru_cache
 import pygame
+import math
 from game.rendering import draw, make_font
 
 INK = (18, 28, 42)
@@ -9,6 +10,19 @@ MINT = (126, 218, 191)
 GOLD = (239, 193, 112)
 TEXT = (231, 237, 238)
 MUTED = (142, 166, 181)
+CRIMSON = (225, 65, 65)
+ROSE = (245, 95, 120)
+AZURE = (60, 150, 255)
+EMERALD = (50, 205, 125)
+INDIGO = (140, 120, 250)
+AMBER = (255, 190, 60)
+
+BTN_DANGER = {"accent": CRIMSON, "fill": (52, 24, 28)}
+BTN_CREATE = {"accent": AZURE, "fill": (22, 38, 64)}
+BTN_SUCCESS = {"accent": EMERALD, "fill": (18, 48, 32)}
+BTN_TASK = {"accent": GOLD, "fill": (50, 40, 18)}
+BTN_SPECIAL = {"accent": INDIGO, "fill": (36, 28, 62)}
+BTN_NEUTRAL = {"accent": (130, 150, 170), "fill": (28, 38, 48)}
 
 
 def mix(a, b, amount):
@@ -59,17 +73,94 @@ def centered(surface,text,rect,font,color=TEXT,padding=4):
     surface.set_clip(old)
 
 
-def button(surface,label,rect,font,selected=False,accent=MINT,fill=None,light=False,hover=True):
+def draw_pixel_icon(surface, kind, cx, cy, color):
+    """Dibuja iconos nítidos en pixel art sin cargar archivos externos."""
+    if kind == "+":
+        draw.rect(surface, color, (cx - 3, cy, 7, 1))
+        draw.rect(surface, color, (cx, cy - 3, 1, 7))
+    elif kind in ("x", "close", "delete"):
+        for d in range(-2, 3):
+            draw.rect(surface, color, (cx + d, cy + d, 1, 1))
+            draw.rect(surface, color, (cx + d, cy - d, 1, 1))
+    elif kind in ("check", "ok"):
+        draw.rect(surface, color, (cx - 3, cy, 1, 2))
+        draw.rect(surface, color, (cx - 2, cy + 1, 1, 2))
+        draw.rect(surface, color, (cx - 1, cy + 2, 1, 2))
+        draw.rect(surface, color, (cx, cy + 1, 1, 2))
+        draw.rect(surface, color, (cx + 1, cy, 1, 2))
+        draw.rect(surface, color, (cx + 2, cy - 1, 1, 2))
+        draw.rect(surface, color, (cx + 3, cy - 2, 1, 2))
+    elif kind in ("!", "info", "task"):
+        draw.rect(surface, color, (cx, cy - 3, 1, 4))
+        draw.rect(surface, color, (cx, cy + 2, 1, 1))
+    elif kind=='quiz':
+        for i,fill in enumerate((ROSE,AZURE,GOLD,EMERALD)):
+            draw.rect(surface,fill,(cx-4+(i%2)*5,cy-4+(i//2)*5,4,4),border_radius=1)
+    elif kind=='model':
+        draw.rect(surface,color,(cx-5,cy-4,5,4),1)
+        draw.rect(surface,color,(cx+1,cy+1,5,4),1)
+        draw.line(surface,color,(cx-3,cy),(cx-3,cy+3))
+        draw.line(surface,color,(cx-3,cy+3),(cx+1,cy+3))
+    elif kind in ('book','class'):
+        draw.rect(surface,color,(cx-5,cy-4,11,8),1)
+        draw.line(surface,color,(cx,cy-4),(cx,cy+4))
+        draw.line(surface,color,(cx-3,cy-1),(cx-1,cy-1))
+    elif kind=='door':
+        draw.rect(surface,color,(cx-4,cy-5,8,11),1)
+        draw.rect(surface,color,(cx+1,cy,1,1))
+    elif kind in ("sword", "attack"):
+        draw.line(surface, color, (cx - 2, cy + 2), (cx + 2, cy - 2))
+        draw.line(surface, color, (cx - 3, cy + 3), (cx - 1, cy + 1))
+        draw.rect(surface, color, (cx + 1, cy - 3, 2, 2))
+    elif kind in ("shield", "defense"):
+        draw.polygon(surface, color, [(cx - 3, cy - 3), (cx + 3, cy - 3), (cx + 3, cy), (cx, cy + 4), (cx - 3, cy)])
+    elif kind in ("wand", "star"):
+        draw.rect(surface, color, (cx, cy - 3, 1, 7))
+        draw.rect(surface, color, (cx - 3, cy, 7, 1))
+        for d in (-1, 1):
+            draw.rect(surface, color, (cx + d, cy + d, 1, 1))
+            draw.rect(surface, color, (cx + d, cy - d, 1, 1))
+
+
+def draw_mvp_banner(surface, rect, tick=0):
+    """Pancarta dorada pixel art para celebrar el rendimiento MVP."""
+    rect = pygame.Rect(rect)
+    panel(surface, rect, fill=(48, 36, 12), accent=GOLD, shadow=True, radius=3)
+    draw.rect(surface, (255, 235, 150), rect.inflate(-2, -2), 1, border_radius=2)
+    font_mvp = make_font(16)
+    font_sub = make_font(10)
+    import math
+    shimmer = int((math.sin(tick * 0.12) + 1.0) * 25)
+    gold_glow = (min(255, 239 + shimmer), min(255, 193 + shimmer), 112)
+    rendered = font_mvp.render("M V P", True, gold_glow)
+    surface.blit(rendered, (rect.centerx - rendered.get_width() // 2, rect.y + 3))
+    for x in (rect.centerx-rendered.get_width()//2-10,rect.centerx+rendered.get_width()//2+10):
+        draw_pixel_icon(surface,'star',x,rect.y+9,gold_glow)
+    sub_txt = font_sub.render("¡DESEMPEÑO SOBRESALIENTE! +3 PL", True, (240, 245, 215))
+    surface.blit(sub_txt, (rect.centerx - sub_txt.get_width() // 2, rect.y + 20))
+
+
+def button(surface,label,rect,font,selected=False,accent=MINT,fill=None,light=False,hover=True,pulse=False,icon=None):
     rect=pygame.Rect(rect)
     fill=fill or ((220,228,218) if light else (35,57,67) if selected else (25,40,55))
+    if pulse:
+        import math
+        p = (math.sin(pygame.time.get_ticks() / 140.0) + 1.0) * 0.5
+        fill = mix(fill, accent, 0.28 * p)
+        accent = mix(accent, (255, 255, 255), 0.45 * p)
     display=pygame.display.get_surface()
     if hover and display and pygame.mouse.get_focused():
         mx,my=pygame.mouse.get_pos();dw,dh=display.get_size()
         if rect.collidepoint(mx*480/max(1,dw),my*300/max(1,dh)):
-            fill=mix(fill,accent,.12)
+            fill=mix(fill,accent,.14)
     radius=min(rect.height//2,9) if rect.width<=35 else 3
     panel(surface,rect,fill,accent,shadow=True,radius=radius,selected=selected,light=light)
-    centered(surface,label,rect,font,(37,62,69) if light else GOLD if selected else TEXT,padding=3)
+    if icon:
+        draw_pixel_icon(surface, icon, rect.x + 8, rect.centery, accent if selected else TEXT)
+        text_rect = pygame.Rect(rect.x + 12, rect.y, rect.width - 12, rect.height)
+        centered(surface,label,text_rect,font,(37,62,69) if light else GOLD if selected else TEXT,padding=2)
+    else:
+        centered(surface,label,rect,font,(37,62,69) if light else GOLD if selected else TEXT,padding=3)
 
 
 def backdrop(surface,tint=(15,25,39)):
@@ -178,9 +269,12 @@ def intro_room():
     pygame.draw.polygon(art,(66,80,79),[(100,59),(140,59),(172,102),(124,102)])
     pygame.draw.polygon(art,(64,78,77),[(340,59),(380,59),(389,98),(358,98)])
     plant(art,93,73);plant(art,378,73)
-    pygame.draw.rect(art,(118,88,58),(81,215,12,31))
-    pygame.draw.rect(art,(77,64,50),(83,219,8,24))
-    pygame.draw.rect(art,(198,163,87),(89,232,2,2))
+    pygame.draw.rect(art,(43,34,27),(78,211,24,44))
+    pygame.draw.rect(art,(177,142,92),(81,214,18,38))
+    pygame.draw.rect(art,(94,71,50),(83,216,14,34))
+    pygame.draw.rect(art,(46,76,83),(85,220,10,12))
+    pygame.draw.rect(art,(211,191,133),(95,237,2,3))
+    pygame.draw.line(art,(211,194,151),(82,251),(100,251),2)
     pygame.draw.rect(art,(125,104,75),(394,115,6,45))
     for i in range(5):pygame.draw.rect(art,[(162,117,80),(101,145,130),(203,170,100)][i%3],(395,119+i*7,4,5))
     board(art,(163,31,153,32))
@@ -190,6 +284,7 @@ def intro_room():
     pygame.draw.line(art,(104,127,120),(223,100),(231,100))
     pygame.draw.rect(art,(74,119,103),(257,99,6,7))
     pygame.draw.line(art,(220,221,198),(258,99),(261,99))
+    netbook(art,245,95)
     return art
 
 
@@ -218,7 +313,11 @@ def marco_portrait(surface,rect):
 
 
 def marco_sprite(surface,x,y):
-    draw.ellipse(surface,(27,39,41),(x,y+18,17,4))
+    draw.ellipse(surface,(27,39,41),(x,y+21,18,4))
+    draw.rect(surface,(73,64,51),(x+4,y+17,4,6))
+    draw.rect(surface,(73,64,51),(x+10,y+17,4,6))
+    draw.rect(surface,(30,33,34),(x+3,y+22,5,2))
+    draw.rect(surface,(30,33,34),(x+10,y+22,6,2))
     draw.rect(surface,(64,84,65),(x+2,y+9,13,11))
     draw.rect(surface,(113,135,100),(x+2,y+9,3,9))
     draw.polygon(surface,(228,226,197),[(x+7,y+9),(x+11,y+9),(x+9,y+15)])
@@ -226,8 +325,8 @@ def marco_sprite(surface,x,y):
     draw.rect(surface,(238,194,148),(x+3,y+2,11,8))
     draw.rect(surface,(218,227,213),(x+2,y,13,4),border_radius=1)
     draw.rect(surface,(179,195,184),(x+2,y+4,2,3))
-    draw.rect(surface,(37,51,50),(x+4,y+5,4,3),1)
-    draw.rect(surface,(37,51,50),(x+10,y+5,4,3),1)
+    draw.rect(surface,(22,39,57),(x+4,y+5,4,3),1)
+    draw.rect(surface,(22,39,57),(x+10,y+5,4,3),1)
     draw.line(surface,(37,51,50),(x+7,y+6),(x+10,y+6))
     draw.rect(surface,(233,189,141),(x,y+14,2,4))
     draw.rect(surface,(233,189,141),(x+15,y+14,2,4))
@@ -261,3 +360,37 @@ def title_art():
         pygame.draw.ellipse(art,(55,68,61),(xx-18,257,40,5))
     plant(art,67,231,2);plant(art,388,231,2)
     return art
+
+
+def advance_indicator(surface,center,tick,finished=False):
+    x,y=center
+    if finished:draw.circle(surface,MINT,(x,y),2)
+    else:
+        x+=round(math.sin(tick*.15)*2)
+        draw.polygon(surface,MINT,[(x-3,y-4),(x+3,y),(x-3,y+4)])
+
+
+def teacher_notice(surface,center,tick,completed=False):
+    color=MINT if completed else GOLD
+    if math.sin(tick*.14)<0:color=mix(color,(44,52,44),.38)
+    draw.circle(surface,color,center,6)
+    if completed:draw_pixel_icon(surface,'check',center[0],center[1],INK)
+    else:centered(surface,'!',pygame.Rect(center[0]-5,center[1]-5,10,10),make_font(16),INK,padding=0)
+
+
+def chair(surface,rect):
+    x,y,w,h=pygame.Rect(rect)
+    draw.ellipse(surface,(12,23,31),(x-2,y+h-4,w+4,6))
+    draw.line(surface,(87,103,105),(x+w//2,y+h-7),(x+w//2,y+h-1),2)
+    draw.line(surface,(87,103,105),(x+2,y+h-1),(x+w-2,y+h-1))
+    panel(surface,pygame.Rect(x,y,w,h-5),(38,65,76),(89,133,141),shadow=False,radius=3)
+    draw.line(surface,(67,104,115),(x+3,y+4),(x+w-4,y+4))
+
+
+def netbook(surface,x,y):
+    panel(surface,pygame.Rect(x,y,24,15),(64,82,92),(153,179,183),shadow=False,radius=2)
+    draw.rect(surface,(13,35,44),(x+2,y+2,20,10))
+    draw.line(surface,MINT,(x+4,y+5),(x+16,y+5))
+    draw.line(surface,AZURE,(x+4,y+8),(x+12,y+8))
+    draw.polygon(surface,(143,162,169),[(x,y+15),(x+24,y+15),(x+28,y+20),(x-3,y+20)])
+    for dx in range(1,23,4):draw.line(surface,(64,83,97),(x+dx,y+16),(x+dx+1,y+18))

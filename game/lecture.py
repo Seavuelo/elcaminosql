@@ -18,7 +18,8 @@ class LectureScene:
         self.slides = []
         self.on_finish_callback = None
 
-        self.font_title = make_font(15)
+        self.font_title = make_font(19)
+        self.font_title.set_bold(True)
         self.font_body = make_font(13)
         self.font_code = make_font(13)
         self.font_chalk = make_font(12)
@@ -45,8 +46,19 @@ class LectureScene:
 
     def _build_slides(self, year, day, attempts):
         if day < 5:
-            return slides_for(year,day)
-        return [dict(title=f"Examen de año {year}", chalk_title="Cinco desafíos de la semana", chalk_body="Sin límite de tiempo, catálogo y apuntes disponibles\n\nCtrl+Enter o F5: probar sin nota\nCtrl+Shift+Enter: entregar respuesta definitiva\n\nTres aciertos de cinco dan nota 4,0, cinco dan 7,0\nLos errores de sintaxis no consumen una respuesta", code_example="", turing="Lee las columnas, condiciones y el orden solicitado, puedes revisar tu resultado antes de entregar, no hay pistas con soluciones durante la prueba")]
+            pages = slides_for(year,day)
+        else:
+            pages = [dict(title=f"Examen de año {year}", chalk_title="Cinco desafíos de la semana", chalk_body="Sin límite de tiempo, catálogo y apuntes disponibles\n\nCtrl+Enter o F5: probar sin nota\nCtrl+Shift+Enter: entregar respuesta definitiva\n\nTres aciertos de cinco dan nota 4,0, cinco dan 7,0\nLos errores de sintaxis no consumen una respuesta", code_example="", turing="Hoy resolverás cinco desafíos de lo que practicamos. No hay límite de tiempo. Lee qué columnas, condiciones y orden te piden. Puedes consultar tus apuntes y probar antes de entregar. La entrega definitiva se hace con control, mayúsculas y enter. No habrá pistas con soluciones durante la prueba.")]
+        from game.intro_voice_scripts import attach_voice_scripts
+        slides=[]
+        for page in pages:
+            for index,speech in enumerate(paginate_text(page['turing'],self.font_body,394,52,2)):
+                slide=dict(page,turing=speech)
+                if page.get('code_example'):slide['code_focus']=min(index,len(page['code_example'].splitlines())-1)
+                if page.get('illustration'):slide['illustration_variant']=index
+                slides.append(slide)
+        attach_voice_scripts(day,slides,year)
+        return slides
 
     def handle_event(self, event):
         if not self.active:
@@ -95,8 +107,6 @@ class LectureScene:
             elif event.key == pygame.K_ESCAPE:
                 self.audio.stop_narration()
                 self.active = False
-                if self.on_finish_callback:
-                    self.on_finish_callback()
                 return True
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if not self.chalk_is_done:
@@ -130,8 +140,7 @@ class LectureScene:
         board(surface,board_rect,exam=self.day==5)
 
         # Título de tiza
-        c_title_surf = self.font_title.render(fit_text(cur_slide["chalk_title"], self.font_title, 260), True, COLOR_AMBER)
-        surface.blit(c_title_surf, (28, 20))
+        draw_fitted_text(surface,cur_slide['chalk_title'],pygame.Rect(26,12,292,27),self.font_title,COLOR_AMBER,padding=0)
         if cur_slide.get('narration_id'):
             enabled=bool(self.audio.config.get('narration_enabled',True))
             for label,rect in [('Voz '+('sí' if enabled else 'no'),pygame.Rect(326,15,60,17)),('Repetir',pygame.Rect(392,15,64,17))]:
@@ -153,8 +162,8 @@ class LectureScene:
         body_chars = min(self.chalk_char_index, len(chalk_body))
         if cur_slide.get('illustration'):
             from game.learning_diagrams import illustration
-            render_wrapped_text(surface,chalk_body,pygame.Rect(28,42,424,24),self.font_chalk,color=(197,214,204),padding=0)
-            diagram_rect=pygame.Rect(28,80,424,102)
+            draw_fitted_text(surface,chalk_body,pygame.Rect(28,42,424,44),self.font_chalk,(197,214,204),padding=0)
+            diagram_rect=pygame.Rect(28,92,424,90)
             old_clip=surface.get_clip()
             reveal=1 if self.chalk_is_done else self.chalk_char_index/max(1,total_chalk)
             surface.set_clip(old_clip.clip(pygame.Rect(diagram_rect.x,diagram_rect.y-16,max(0,int(diagram_rect.width*reveal)),diagram_rect.height+16)))
@@ -180,12 +189,12 @@ class LectureScene:
         diag_rect = pygame.Rect(12, 204, 456, 88)
         
         # Parpadeo sutil en el estado de Marco
-        is_blink = (self.tick_count // 18) % 2 == 0
-        state_tag = " [Explicando]" if (not self.chalk_is_done and is_blink) else " [Clase]"
-        turing_title = f"PROFESOR MARCO{state_tag}  |  {cur_slide['title']}"
+        turing_title = f"PROFESOR MARCO | {cur_slide['title']}"
 
         draw_panel(surface, diag_rect, bg_color=(14, 18, 28, 248), border_color=(0, 229, 255), border_width=1,
-                   title=turing_title, font=self.font_title, title_color=COLOR_AMBER)
+                   title="", font=self.font_body, title_color=COLOR_AMBER)
+        draw.rect(surface,(22,34,45),(14,206,452,18),border_radius=2)
+        draw_fitted_text(surface,turing_title,pygame.Rect(21,207,438,16),self.font_body,COLOR_AMBER,padding=0)
 
         # Avatar de Marco
         avatar_x = 18

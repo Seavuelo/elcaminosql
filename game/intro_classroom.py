@@ -1,4 +1,4 @@
-from game.visuals import intro_room, desk, monitor_details, panel, button, backdrop, centered, GOLD, MINT, marco_sprite
+from game.visuals import intro_room, desk, monitor_details, panel, button, backdrop, centered, GOLD, MINT, marco_sprite, teacher_notice, chair, BTN_SPECIAL, BTN_CREATE, BTN_SUCCESS, BTN_TASK
 """Aula optativa con Marco, Moshi, pizarra y Kashut desde el PC"""
 from copy import deepcopy
 import math
@@ -57,7 +57,7 @@ class FoundationsScene:
         self.tick=0
         self.day_intro_remaining=0 if review else 2.0
         self.design=LogicalDesign(self.state.get('logical_model'),self.state.get('tables'))
-        self.modeler=DesignStudio(self.design,self.save_design,lambda:self.on_notes(),self.task if not review else None,self.save_test)
+        self.modeler=DesignStudio(self.design,self.save_design,lambda:self.on_notes(),self.task if not review else None,self.save_test,task_checklist=self.task_checklist if not review else None)
         self.player=Player(210,228,self.save.data)
         self.moshi=create_moshi(Classmate)
         self.moshi.desk_x,self.moshi.desk_y=280,197
@@ -69,6 +69,7 @@ class FoundationsScene:
         self.kashut=Kashut(self.save,self.audio,lambda:setattr(self,'mode','room'))
         self.desks=[(130,197,self.save.data.get('player_name','Estudiante'),None),(280,197,'Moshi',self.moshi)]+[(x,y,p.name,p) for (x,y),p in zip(DESKS,self.peers)]
         self.colliders=[pygame.Rect(78,30,324,25),pygame.Rect(78,30,8,228),pygame.Rect(394,30,8,228),pygame.Rect(78,250,324,8),pygame.Rect(215,96,58,20)]+[pygame.Rect(x,y,65,27) for x,y,_,_ in self.desks]
+        self.colliders.append(pygame.Rect(236,77,17,24))
 
     def save_design(self,data):
         self.state['logical_model']=deepcopy(data)
@@ -86,27 +87,56 @@ class FoundationsScene:
 
     def task(self):
         return {1:'Hoy solo conceptos y Kashut, no hay tarea de modelamiento',
-          2:'Crea ESTUDIANTE con ID numérico, NOMBRE VARCHAR y PROMEDIO numérico, hoy no necesitas una relación',
-          3:'Marca ESTUDIANTE.ID como UID primario y NOMBRE como obligatorio',
-          4:'Crea TUTORIA con su UID ID y atributo TEMA, une ESTUDIANTE con TUTORIA mediante 1:N, activa pasar UID para crear la FK',
+          2:'En tu computador crea ESTUDIANTE con id NUMERIC, nombre VARCHAR y promedio NUMERIC, después guarda la entidad',
+          3:'En tu computador marca ESTUDIANTE.id como UID primario y nombre como obligatorio',
+          4:'En tu computador crea TUTORIA con su UID id y atributo tema, une ESTUDIANTE con TUTORIA mediante 1:N, activa pasar UID para crear la FK',
           5:'Convierte a relacional y pulsa Probar en el aula para comprobar datos válidos, PK duplicada, nombre ausente y una FK inexistente'}[self.day]
 
     def model_goal(self):
-        if self.day==1:return True,'Sin tarea de modelamiento hoy'
-        student=self.design.entity('ESTUDIANTE')
-        attrs={a['name']:a for a in student['attributes']} if student else {}
-        if any(key not in attrs for key in ('ID','NOMBRE','PROMEDIO')) or attrs.get('NOMBRE',{}).get('type')!='VARCHAR' or any(attrs.get(k,{}).get('type') not in ('NUMERIC','INTEGER','REAL') for k in ('ID','PROMEDIO')):
-            return False,self.task()
-        if self.day>=3 and (not attrs['ID'].get('uid') or not attrs['NOMBRE'].get('mandatory')):
-            return False,'En ESTUDIANTE marca ID como UID primario y NOMBRE como obligatorio'
-        if self.day>=4:
-            target=self.design.entity('TUTORIA')
-            other={a['name']:a for a in target['attributes']} if target else {}
-            if not other.get('ID',{}).get('uid') or other.get('TEMA',{}).get('type')!='VARCHAR' or not any(r['source']=='ESTUDIANTE' and r['target']=='TUTORIA' and r['kind']=='1:N' and r.get('transfer_key') for r in self.design.relations):
-                return False,self.task()
-        if self.day==5 and self.state['tested_sql']!=self.design.statements():
-            return False,'Pulsa Probar modelo desde tu computador, comprueba el diseño actual con datos reales'
-        return True,'Taller listo'
+        checklist=self.task_checklist()
+        pending=next((title for title,done in checklist['items'] if not done),None)
+        return (False,'En el modelador de tu computador, completa este paso: '+pending) if pending else (True,'Taller listo')
+
+    def task_checklist(self):
+        day = self.day
+        general = self.task()
+        items = []
+        if day == 1:
+            return {"day": day, "general": general, "items": items, "is_complete": True}
+
+        student = self.design.entity('ESTUDIANTE')
+        attrs = {a['name'].upper(): a for a in student['attributes']} if student else {}
+        has_id = attrs.get('ID', {}).get('type') in ('NUMERIC', 'INTEGER', 'REAL')
+        has_nom = attrs.get('NOMBRE', {}).get('type') == 'VARCHAR'
+        has_prom = attrs.get('PROMEDIO', {}).get('type') in ('NUMERIC', 'INTEGER', 'REAL')
+
+        items.append(("Crear entidad 'ESTUDIANTE'", bool(student)))
+        items.append(("Atributo 'id' (tipo NUMERIC)", has_id))
+        items.append(("Atributo 'nombre' (tipo VARCHAR)", has_nom))
+        items.append(("Atributo 'promedio' (tipo NUMERIC)", has_prom))
+
+        if day >= 3:
+            items.append(("Marcar 'id' como UID primario", bool(attrs.get('ID', {}).get('uid'))))
+            items.append(("Marcar 'nombre' como obligatorio (no NULL)", bool(attrs.get('NOMBRE', {}).get('mandatory'))))
+
+        if day >= 4:
+            target = self.design.entity('TUTORIA')
+            other = {a['name'].upper(): a for a in target['attributes']} if target else {}
+            has_rel = any(r['source'] == 'ESTUDIANTE' and r['target'] == 'TUTORIA' and r['kind'] == '1:N' and r.get('transfer_key') for r in self.design.relations)
+            items.append(("Crear entidad 'TUTORIA'", bool(target)))
+            items.append(("TUTORIA.id como UID primario", bool(other.get('ID', {}).get('uid'))))
+            items.append(("TUTORIA.tema de tipo VARCHAR", other.get('TEMA', {}).get('type') == 'VARCHAR'))
+            items.append(("Relación 1:N ESTUDIANTE -> TUTORIA con pasar UID", has_rel))
+
+        if day == 5:
+            try:
+                tested = bool(self.state.get('tested_sql')) and self.state.get('tested_sql') == self.design.statements()
+            except ValueError:
+                tested = False
+            items.append(("Generar relacional y ejecutar comprobación", tested))
+
+        is_complete = all(status for _, status in items)
+        return {"day": day, "general": general, "items": items, "is_complete": is_complete}
 
     def test_workshop(self):
         from contextlib import closing
@@ -144,7 +174,7 @@ class FoundationsScene:
                 kind,caption=board_for(self.day,page['title'],index)
                 slide=dict(title=page['title'],chalk_title=page['title'],chalk_body=caption,turing=speech,code_example=page['sql'])
                 if page['sql']:slide['code_focus']=min(index,len(page['sql'].splitlines())-1)
-                elif page['columns'] and self.day!=1:slide.update(table_columns=page['columns'],table_rows=page['rows'])
+                elif page['columns'] and self.day!=1 and not (self.day==2 and kind and index%2):slide.update(table_columns=page['columns'],table_rows=page['rows'])
                 elif kind:slide.update(illustration=kind,illustration_variant=index)
                 self.lecture.slides.append(slide)
         for speech in paginate_text('Ya, vamos a hacer un Kashut, únanse desde su computador a ver si quedan en el podio, lean con calma antes de responder, después repasamos juntos las preguntas que hayan costado',self.lecture.font_body,394,52,2):
@@ -279,8 +309,50 @@ class FoundationsScene:
 
     def button(self,surface,label,rect,callback):
         rect=pygame.Rect(rect)
-        button(surface,label,rect,self.font,accent=MINT)
+        style=(BTN_SPECIAL if 'Kashut' in label else BTN_CREATE if 'Modelador' in label else
+               BTN_TASK if 'Tarea' in label else BTN_SUCCESS if 'Probar' in label else {})
+        icon='!' if 'Tarea' in label else 'check' if 'Probar' in label else None
+        if icon is None:
+            icon=('quiz' if 'Kashut' in label else 'model' if 'Modelador' in label else
+                  'class' if 'Repasar' in label else 'book' if 'Cuaderno' in label else 'door' if 'Volver' in label else None)
+        button(surface,label,rect,self.font,icon=icon,**style)
         self.buttons.append((rect,callback))
+
+    def open_task(self):
+        self.mode='studio'
+        self.modeler.focus=None
+        self.modeler.task_page=0
+        self.modeler.form='task_modal'
+
+    def draw_pc(self,surface):
+        self.buttons=[]
+        panel(surface,pygame.Rect(18,35,444,249),(15,29,40),MINT)
+        centered(surface,'CAMPUS | Tu estación de aprendizaje',pygame.Rect(30,44,420,22),self.title,GOLD,padding=0)
+        draw_fitted_text(surface,DAYS[self.day]['title'],pygame.Rect(32,70,416,21),self.font,(211,231,226),padding=0)
+        panel(surface,pygame.Rect(30,100,248,130),(23,40,50),MINT,shadow=False)
+        record=self.state.get('kashut',{}).get(str(self.day),{})
+        checks=[('Clase con Marco',bool(self.state['lectures'].get(str(self.day)))),
+                ('Diez preguntas de Kashut',bool(record.get('complete'))),
+                ('Revisar lo que costó',bool(record.get('reviewed')))]
+        task=self.task_checklist()
+        if self.day>1:checks.append(('Taller de modelado',task['is_complete']))
+        for i,(label,done) in enumerate(checks):
+            y=109+i*22
+            draw.circle(surface,MINT if done else GOLD,(43,y+7),4,0 if done else 1)
+            draw_fitted_text(surface,label+(' | Listo' if done else ' | Pendiente'),pygame.Rect(54,y,213,17),self.small,MINT if done else (230,224,199),padding=0)
+        next_step=('Entra a Kashut para responder las diez preguntas' if not record.get('complete') else
+                   'Entra a Kashut y termina la retroalimentación' if not record.get('reviewed') else
+                   'Revisa Tarea y completa las casillas del diseño' if not task['is_complete'] else
+                   'Jornada lista, vuelve a hablar con Marco')
+        draw_fitted_text(surface,next_step,pygame.Rect(40,198,228,28),self.small,GOLD,padding=0)
+        self.button(surface,'Kashut',(290,101,158,29),self.start_kashut)
+        if self.day>1 or self.review:
+            self.button(surface,'Modelador',(290,137,158,27),lambda:setattr(self,'mode','studio'))
+            self.button(surface,'Tarea y requisitos',(290,170,158,25),self.open_task)
+        if self.day>=4:self.button(surface,'Probar modelo del taller',(290,201,158,27),self.test_workshop)
+        self.button(surface,'Cuaderno',(30,241,134,27),self.on_notes)
+        self.button(surface,'Repasar clase',(174,241,134,27),self.restart_lecture)
+        self.button(surface,'Volver a sala',(318,241,130,27),lambda:setattr(self,'mode','room'))
 
     def draw(self,surface):
         self.buttons=[]
@@ -291,9 +363,11 @@ class FoundationsScene:
         centered(surface,'Fundamentos | Marco',(171,37,138,18),self.small,(225,240,215),padding=0)
         x,y=236,77
         marco_sprite(surface,x,y)
-        draw.circle(surface,(255,205,95),(244,70),5)
-        draw_fitted_text(surface,'!',pygame.Rect(240,65,8,9),self.small,(30,35,40),padding=0)
+        lecture_done=bool(self.state['lectures'].get(str(self.day)))
+        ready=lecture_done and self.state.get('kashut',{}).get(str(self.day),{}).get('reviewed') and self.task_checklist()['is_complete']
+        if not lecture_done or ready:teacher_notice(surface,(244,68),self.tick,ready)
         for dx,dy,label,peer in self.desks:
+            chair(surface,(dx+21,dy+27,24,18))
             desk(surface,(dx,dy,65,27))
             draw.rect(surface,(232,224,193),(dx+3,dy+6,10,12))
             draw.line(surface,(155,165,144),(dx+5,dy+8),(dx+10,dy+8))
@@ -306,7 +380,6 @@ class FoundationsScene:
                 draw.line(surface,(80,160,235),(dx+23,dy+14),(dx+36,dy+14))
             draw.rect(surface,(165,170,175),(dx+20,dy+25,25,3))
             monitor_details(surface,(dx+18,dy+3,29,21))
-            draw_fitted_text(surface,label,pygame.Rect(dx,dy+48,65,12),self.small,(235,235,225),padding=0)
             if peer is not None:
                 if peer.state in ('studying','packing','shutdown'):
                     pose='up' if peer.state=='studying' else 'right'
@@ -325,28 +398,24 @@ class FoundationsScene:
         for peer in self.peers:
             if peer.state!='gone':
                 self.buttons.append((pygame.Rect(peer.x-6,peer.y-15,36,40),lambda p=peer:self.speak_peer(p)))
-        panel(surface,pygame.Rect(14,7,270,20),(22,39,50),MINT,shadow=False)
-        draw_fitted_text(surface,f'Taller opcional | Día {self.day}/5',pygame.Rect(22,8,254,18),self.title,GOLD,padding=0)
-        if self.mode in ('pause','pc'):
+        panel(surface,pygame.Rect(14,7,238,20),(22,39,50),MINT,shadow=False)
+        draw_fitted_text(surface,f'Taller opcional | Día {self.day}/5',pygame.Rect(22,8,222,18),self.title,GOLD,padding=0)
+        if self.mode=='pc':
+            self.draw_pc(surface)
+        elif self.mode=='pause':
             panel(surface,pygame.Rect(85,66,310,185),(18,33,46),GOLD)
             self.buttons=[]
-            if self.mode=='pc':
-                self.button(surface,'Unirse a Kashut',(105,82,270,28),self.start_kashut)
-                if self.day>1 or self.review:self.button(surface,'Abrir modelador',(105,118,270,28),lambda:setattr(self,'mode','studio'))
-                if self.day>=4:self.button(surface,'Probar modelo del taller',(105,154,270,28),self.test_workshop)
-                self.button(surface,'Cuaderno',(105,190,130,24),self.on_notes)
-                self.button(surface,'Volver a sala',(245,190,130,24),lambda:setattr(self,'mode','room'))
-            else:
-                self.button(surface,'Continuar en la sala',(105,82,270,28),lambda:setattr(self,'mode','room'))
-                self.button(surface,'Guardar y volver al menú' if not self.review else 'Volver a la carrera',(105,121,270,28),self.leave)
-                self.button(surface,'Omitir taller opcional, ir a la carrera',(105,160,270,28),self.skip)
-                self.button(surface,'Repasar la clase de hoy',(105,199,270,28),self.restart_lecture)
+            self.button(surface,'Continuar en la sala',(105,82,270,28),lambda:setattr(self,'mode','room'))
+            self.button(surface,'Guardar y volver al menú' if not self.review else 'Volver a la carrera',(105,121,270,28),self.leave)
+            self.button(surface,'Omitir taller opcional, ir a la carrera',(105,160,270,28),self.skip)
+            self.button(surface,'Repasar la clase de hoy',(105,199,270,28),self.restart_lecture)
         if self.dialog.active:self.dialog.draw(surface)
         if self.day_intro_remaining>0:
             backdrop(surface)
-            panel(surface,pygame.Rect(48,86,384,112),(23,41,52),GOLD)
-            centered(surface,'Semana Introductoria',pygame.Rect(40,99,400,35),make_font(28),GOLD,padding=0)
-            centered(surface,f'Día {self.day}',pygame.Rect(40,151,400,32),make_font(25),MINT,padding=0)
-            for i in range(5):draw.circle(surface,GOLD if i+1==self.day else (60,86,91),(212+i*14,191),2)
+            panel(surface,pygame.Rect(35,77,410,144),(23,41,52),GOLD)
+            centered(surface,'Semana introductoria',pygame.Rect(45,87,390,30),make_font(28),GOLD,padding=0)
+            centered(surface,DAYS[self.day]['title'],pygame.Rect(55,126,370,22),make_font(16),(217,231,218),padding=0)
+            centered(surface,f'Día {self.day}',pygame.Rect(45,156,390,30),make_font(25),MINT,padding=0)
+            for i in range(5):draw.circle(surface,GOLD if i+1==self.day else (60,86,91),(212+i*14,203),3)
 
 

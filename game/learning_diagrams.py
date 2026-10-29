@@ -25,7 +25,50 @@ def illustration(surface,kind,rect,light=False,variant=None):
     def arrow(a,b):
         draw.line(surface,accent,a,b,2)
         draw.polygon(surface,accent,[b,(b[0]-6,b[1]-4),(b[0]-6,b[1]+4)])
-    if kind=='welcome':
+    flows={
+        'filter':('NOTA 3\n3 < 4: sí','NOTA 4\n4 < 4: no','NOTA 4\n4 <= 4: sí'),
+        'sort':('SIN ORDEN\n5 | 3 | 7','ASC\n3 | 5 | 7','DESC\n7 | 5 | 3'),
+        'paging':('ORDENAR\n1 | 2 | 3 | 4','PÁGINA 1\nLIMIT 2\nOFFSET 0: 1, 2','PÁGINA 2\nLIMIT 2\nOFFSET 2: 3, 4'),
+        'update':('SELECT\nElegir y revisar','UPDATE\nSET costo = 14\nWHERE id = 1','COMPROBAR\nSolo cambió ID 1'),
+        'delete':('SELECT\nRevisar ID 3','DELETE\nWHERE id = 3','TABLA\nConserva otras filas'),
+        'aggregate':('DATOS\n1 | 0 | 1 | NULL','CONTEOS\nFilas: 4\nConocidos: 3','RESUMEN\nSUM: 2\nAVG: 2 / 3'),
+        'grouping':('MATERIAS\n4, 4, 6 créditos','GROUP BY\nGrupo 4: dos\nGrupo 6: una','COUNT(*)\n4 -> 2\n6 -> 1'),
+        'having':('WHERE\nElegir materias\ncupos > 0','GROUP BY\nAgrupar por créditos\nContar por grupo','HAVING\nElegir grupos\nCOUNT(*) >= 2'),
+        'join':('ESTUDIANTE\n11 | Moshi','TUTORÍAS\n20 -> 11\n21 -> 11','COINCIDENCIAS\nMoshi | 20\nMoshi | 21'),
+        'subquery':('INTERIOR\nIDs que asistieron','IN\n¿El ID pertenece\na ese conjunto?','EXTERIOR\nNombres de esos\nestudiantes'),
+        'leftjoin':('IZQUIERDA\n11 | Moshi\n12 | Carlos','TUTORÍAS\n20 -> 11','LEFT JOIN\nMoshi | 20\nCarlos | NULL'),
+        'view':('CREATE VIEW\nGuardar una consulta','CAMBIA EL ORIGEN\nUna materia ya\nno cumple el filtro','CONSULTAR VISTA\nSu resultado\nrefleja el cambio'),
+        'index':('SIN AYUDA\nRevisar candidatos','ÍNDICE\nEstructura organizada\npara buscar','COMPARAR\nPlan de ejecución\ny mediciones'),
+    }
+    if kind=='type_mapping':
+        for i,(left,right) in enumerate([('VARCHAR','TEXT'),('NUMERIC','INTEGER / REAL / NUMERIC'),('DATE','TEXT con validación')]):
+            yy=y+i*h*.33
+            box(left,(x,yy,w*.34,h*.28),gold)
+            arrow((x+w*.36,yy+h*.14),(x+w*.44,yy+h*.14))
+            box(right,(x+w*.46,yy,w*.54,h*.28),accent)
+    elif kind=='capacity':
+        for i in range(10):
+            cell=pygame.Rect(x+i*w*.101,y+h*.18,w*.088,h*.35)
+            box('12'[i] if i<2 else ' ',cell,gold if i<2 else ink)
+        draw_fitted_text(surface,'12 usa 2 de hasta 10 posiciones',pygame.Rect(x,y+h*.62,w,h*.3),font,accent,padding=0)
+    elif kind=='precision':
+        box('12.50\n4 dígitos, 2 decimales\nCabe en NUMERIC(4,2)',(x,y,w*.46,h*.94),accent)
+        box('125.50\n5 dígitos, 2 decimales\nNo cabe en NUMERIC(4,2)',(x+w*.53,y,w*.47,h*.94),(230,145,127))
+    elif kind=='names':
+        box('ENTIDAD\nESTUDIANTE',(x,y,w*.43,h*.94),gold)
+        box('ATRIBUTO\nfecha_nacimiento\nanio_ingreso',(x+w*.53,y,w*.47,h*.94),accent)
+    elif kind=='affinity':
+        box('Columna REAL\nTexto 6.5: número 6.5',(x,y,w*.46,h*.94),gold)
+        box('Sin más reglas\npendiente puede seguir\nsiendo texto',(x+w*.53,y,w*.47,h*.94),accent)
+    elif kind=='binary':
+        box('DATE\n2026-04-18\nUna fecha',(x,y,w*.46,h*.94),gold)
+        box('BLOB\n01001001 10100110\nBytes de un archivo',(x+w*.53,y,w*.47,h*.94),accent)
+    elif kind in flows:
+        for i,label in enumerate(flows[kind]):
+            px=x+i*w*.35
+            box(label,(px,y+h*.02,w*.30,h*.92),gold if i==(variant or 0)%3 else ink)
+            if i<2:arrow((px+w*.305,y+h*.48),(x+(i+1)*w*.35-3,y+h*.48))
+    elif kind=='welcome':
         box('Marco | profesor',(x+w*.25,y,w*.50,h*.30),gold)
         draw.line(surface,accent,(x+w*.5,y+h*.32),(x+w*.5,y+h*.47))
         draw.line(surface,accent,(x+w*.09,y+h*.47),(x+w*.91,y+h*.47))
@@ -74,6 +117,9 @@ def illustration(surface,kind,rect,light=False,variant=None):
                 draw.line(surface,accent,(cx+7,py+16),(cx+7,py+31))
             centered(surface,label,pygame.Rect(px+3,py+38,width-6,h*.79-40),font,gold if i==1 else ink,padding=0)
             if i<2:arrow((px+width+3,y+h*.43),(x+(i+1)*w*.37-4,y+h*.43))
+    elif kind=='types' and h<80:
+        for i,(label,value) in enumerate([('VARCHAR','Moshi'),('NUMERIC','6.8'),('DATE','2026-04-18')]):
+            box(label+'\n'+value,(x+i*w*.34,y,w*.31,h*.94),gold if i==(variant or 0)%3 else ink)
     elif kind=='types':
         for i,(label,value) in enumerate([('VARCHAR','Moshi'),('NUMERIC','6.8'),('DATE','2026-10-24')]):
             px=x+i*w*.34;py=y+h*.05;pw=w*.31;ph=h*.80

@@ -9,9 +9,15 @@ __pycache__/
 # Distribución y compilación
 build/
 dist/
+.tools/
+.godot/
 *.log
 *.tmp
 savegame.json
+study.json
+study.json.bak
+study.json.damaged
+legacy-university.db
 config.json
 .env
 .env.*

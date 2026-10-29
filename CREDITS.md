@@ -56,4 +56,24 @@ Motor de preparación: kokoro-onnx, thewh1teagle, licencia MIT
 
 https://github.com/thewh1teagle/kokoro-onnx
 
-La semana introductoria usa em_santa en 69 archivos OGG generados localmente, el motor y los modelos no se distribuyen ni se cargan al iniciar el juego
+Las 25 clases de Marco usan em_santa en 287 archivos OGG generados localmente, el motor y los modelos no se distribuyen ni se cargan al iniciar el juego
+
+## Versión nativa de Godot
+
+La versión nativa utiliza Godot Engine 4.7.2 bajo licencia MIT y Godot-SQLite v4.9 de 2shady4u bajo licencia MIT, sus avisos completos y los de los componentes del motor están en la pantalla Ayuda > Licencias y componentes
+
+Godot: https://godotengine.org/license/
+
+Godot-SQLite: https://github.com/2shady4u/godot-sqlite
+
+## Tipografías de Godot
+
+Inter, Fraunces y JetBrains Mono, SIL Open Font License 1.1, los avisos completos están en godot/assets/fonts/*-OFL.txt y en la pantalla de licencias
+
+Las ilustraciones de aula, hogar, interfaces y retratos se dibujan con código del proyecto o se exportan de su arte original
+
+## Casos educativos
+
+La investigación de totales duplicados adapta un caso público de agregaciones sobre dos relaciones uno a muchos, con datos y personajes ficticios
+
+Fuente primaria: https://www.postgresql.org/message-id/86b9ec78-925c-1935-bc9d-6bad4ceb1f40@illuminatedcomputing.com

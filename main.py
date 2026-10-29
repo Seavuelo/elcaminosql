@@ -29,11 +29,27 @@ from game.character_customizer import CharacterCustomizer
 from game.intro import IntroPrologue
 from game.title_screen import TitleScreen
 from game.phone import StudentPhone
+from game.league_art import phone_launcher
 from game.foundations import FoundationsScene
 from game.appearance import CUSTOM_FIELDS
 from game.controls import ControlsOverlay
+from game.missions import MissionsOverlay
+from game.creator_note import CreatorNote
 from game.visuals import panel, button, GOLD, MINT
 from game.ui_helpers import fit_text, draw_fitted_text
+
+def setup_display(mode, res):
+    from pygame._sdl2.video import Window,WINDOWPOS_CENTERED
+    display=Window.from_display_module().display_index if pygame.display.get_surface() else 0
+    flags = pygame.FULLSCREEN if mode=='fullscreen' else pygame.NOFRAME if mode=='borderless' else pygame.RESIZABLE
+    size = pygame.display.get_desktop_sizes()[display] if mode=='borderless' else tuple(res)
+    window = pygame.display.set_mode(size,flags,display=display)
+    if mode=='borderless':
+        # SDL codifica el monitor en la posición centrada, también con orígenes negativos.
+        position=WINDOWPOS_CENTERED | display
+        Window.from_display_module().position=(position,position)
+    pygame.display.set_caption(f'El Camino SQL {VERSION} · Versión experimental')
+    return window
 
 def main():
     pygame.init()
@@ -49,18 +65,6 @@ def main():
     # 2. Modo de Pantalla
     screen_mode = config.get("screen_mode", "windowed")
     resolution = config.get("resolution", [960, 600])
-
-    def setup_display(mode, res):
-        flags = 0
-        if mode == "fullscreen":
-            flags = pygame.FULLSCREEN
-        elif mode == "borderless":
-            flags = pygame.NOFRAME
-        else:
-            flags = pygame.RESIZABLE
-        win = pygame.display.set_mode((res[0], res[1]), flags)
-        pygame.display.set_caption(f"El Camino SQL {VERSION} · Versión experimental")
-        return win
 
     window = setup_display(screen_mode, resolution)
 
@@ -98,12 +102,14 @@ def main():
     foundations.on_notes = notebook.open
     foundations.on_settings = settings.open
     phone_button = pygame.Rect(296, 10, 82, 17)
+    missions = MissionsOverlay()
 
     # Estado de flujo principal: "title", "intro", "customizer", "game"
     current_state = "title"
     editing_character = False
     window_has_focus = True
     controls = ControlsOverlay()
+    creator_note=CreatorNote(config)
 
     def enter_career():
         nonlocal current_state
@@ -204,6 +210,7 @@ def main():
         if settings.active:return 'Ajustes'
         if notebook.active:return 'Cuaderno'
         if phone.active:return 'Teléfono'
+        if missions.active:return 'Misiones'
         if current_state=='customizer':return 'Personaje'
         if current_state=='intro':return 'Introducción'
         if current_state=='title':return 'Menú'
@@ -215,10 +222,16 @@ def main():
         if terminal.active:return 'Catálogo SQL' if terminal.show_schema else 'SQL'
         return 'Aula'
 
+    def in_room():
+        if creator_note.active or settings.active or notebook.active or phone.active:return False
+        if current_state=='game':return not (terminal.active or lecture.active or dialog.active)
+        return current_state=='foundations' and foundations.mode=='room' and not foundations.dialog.active and not foundations.day_intro_remaining
+
     running = True
     while running:
         dt = min(clock.tick(FPS) / 1000.0, 0.1)
         tick += 1
+        customizer.update(dt,enabled=current_state=='customizer' and window_has_focus and not settings.active)
 
         # 4. Procesamiento de Eventos
         for event in pygame.event.get():
@@ -237,15 +250,24 @@ def main():
                                 event.pos[1] * VIRTUAL_HEIGHT // max(height, 1))
                 event = pygame.event.Event(event.type, attrs)
 
-            if controls.handle_event(event,controls_context(),virtual_screen):
+            if creator_note.handle_event(event):continue
+            available=in_room()
+            if (controls.active or available) and controls.handle_event(event,controls_context(),virtual_screen):
                 continue
 
             if phone.active:
                 phone.handle_event(event)
                 continue
+            if available:
+                if missions.handle_event(event, current_state):
+                    continue
+            else:missions.close()
+            if missions.active:
+                continue
+
             if ((current_state == "game" or current_state == "foundations" and foundations.mode == "room" and not foundations.day_intro_remaining) and
                     event.type == pygame.KEYDOWN and event.key == pygame.K_F4) or (
-                    current_state == "game" and event.type == pygame.MOUSEBUTTONDOWN and
+                    (current_state == "game" or current_state == "foundations" and foundations.mode=="room" and not foundations.day_intro_remaining) and event.type == pygame.MOUSEBUTTONDOWN and
                     event.button == 1 and phone_button.collidepoint(event.pos)):
                 phone.open()
                 continue
@@ -280,6 +302,9 @@ def main():
             elif current_state == "game":
                 # Clase en pizarra
                 if lecture.active:
+                    if event.type==pygame.KEYDOWN and event.key==pygame.K_o:
+                        settings.open()
+                        continue
                     lecture.handle_event(event)
                     continue
 
@@ -459,14 +484,14 @@ def main():
         # 5. Actualizar Lógica de Juego
         academic = current_state in ("game", "foundations") or editing_character
         audio.set_music_context("study" if current_state == "foundations" else ("exam" if curriculum.current_day == 5 else "study") if academic else "menu")
-        if academic and not controls.active:
+        if academic and not controls.active and not (phone.active and not window_has_focus):
             phone.update(dt)
-        audio.update_narration(paused=controls.active or settings.active or notebook.active or phone.active or not window_has_focus)
+        audio.update_narration(paused=controls.active or settings.active or notebook.active or phone.active or missions.active or not window_has_focus)
         if current_state == "foundations":
-            foundations.update(dt, enabled=not (controls.active or settings.active or notebook.active or phone.active))
+            foundations.update(dt, enabled=not (controls.active or settings.active or notebook.active or phone.active or missions.active))
         if current_state == "game":
-            terminal.update(dt, enabled=not (controls.active or dialog.active or lecture.active or settings.active or notebook.active or phone.active))
-            paused = controls.active or terminal.active or dialog.active or lecture.active or settings.active or notebook.active or phone.active
+            terminal.update(dt, enabled=not (controls.active or dialog.active or lecture.active or settings.active or notebook.active or phone.active or missions.active))
+            paused = controls.active or terminal.active or dialog.active or lecture.active or settings.active or notebook.active or phone.active or missions.active
             world.update(dt, curriculum, paused=paused)
             if not paused:
                 keys = pygame.key.get_pressed()
@@ -540,13 +565,18 @@ def main():
             if settings.active:
                 settings.draw(virtual_screen)
 
-            if current_state == "game":
-                button(virtual_screen,"Teléfono",phone_button,font_hud,accent=MINT)
+            if in_room():
+                missions.draw_button(virtual_screen, current_state, curriculum, foundations, save)
+                if current_state == "game" or foundations.mode=="room" and not foundations.day_intro_remaining and not foundations.dialog.active:
+                    phone_launcher(virtual_screen,phone_button,font_hud,busy=bool(phone.game.state["battle"]))
             if phone.active:
                 phone.draw(virtual_screen, tick)
+            if missions.active:
+                missions.draw_overlay(virtual_screen, current_state, curriculum, foundations, save)
 
         if controls.active:controls.draw(virtual_screen)
-        else:controls.draw_button(virtual_screen)
+        elif in_room():controls.draw_button(virtual_screen)
+        if creator_note.active:creator_note.draw(virtual_screen)
 
         # 7. Escalar a Ventana
         window_size = window.get_size()

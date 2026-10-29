@@ -210,7 +210,8 @@ class FoundationSaveTests(unittest.TestCase):
                     return [pygame.event.Event(pygame.MOUSEBUTTONDOWN,button=1,pos=(w//2,int(135*h/300)))]
                 return value
             open_scene=main.FoundationsScene.open
-            with patch('game.save_system.SAVE_DIR',folder),patch('game.save_system.SAVE_FILE',path), \
+            with patch.dict('game.config.DEFAULT_CONFIG',{'creator_note_seen':True}), \
+                    patch('game.save_system.SAVE_DIR',folder),patch('game.save_system.SAVE_FILE',path), \
                     patch.object(main,'DatabaseManager',return_value=db), \
                     patch.object(main.FoundationsScene,'open',autospec=True,side_effect=open_scene) as opened, \
                     patch.object(pygame.time,'Clock',return_value=Mock(tick=Mock(return_value=100))), \
@@ -256,7 +257,8 @@ class FoundationSaveTests(unittest.TestCase):
                       [key(pygame.K_DOWN)]*12+[key(pygame.K_RETURN)],
                       [pygame.event.Event(pygame.QUIT)]]
             open_scene = main.FoundationsScene.open
-            with patch('game.save_system.SAVE_DIR',folder),patch('game.save_system.SAVE_FILE',path), \
+            with patch.dict('game.config.DEFAULT_CONFIG',{'creator_note_seen':True}), \
+                    patch('game.save_system.SAVE_DIR',folder),patch('game.save_system.SAVE_FILE',path), \
                     patch.object(main,'DatabaseManager',return_value=db), \
                     patch.object(main.FoundationsScene,'open',autospec=True,side_effect=open_scene) as opened, \
                     patch.object(main.LectureScene,'start_lecture') as lecture, \

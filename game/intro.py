@@ -2,7 +2,8 @@ import pygame
 from game.rendering import draw, make_font
 import math
 from game.constants import *
-from game.ui_helpers import render_wrapped_text, draw_panel
+from game.ui_helpers import render_wrapped_text, draw_panel, draw_fitted_text
+from game.visuals import centered, advance_indicator, marco_sprite
 
 class IntroPrologue:
     """Prólogo cinemático con ilustraciones dinámicas en pixel art e introducción a Ingeniería Informática."""
@@ -29,19 +30,19 @@ class IntroPrologue:
         self.slides = [
             {
                 "title": "CAPÍTULO 0: LA CARTA DE ADMISIÓN",
-                "text": "Año 2026. Tras meses de arduo estudio y preparación, recibes la esperada carta con sello dorado del Instituto Tecnológico Universitario:\n\n'Nos complace informarle que ha sido admitido formalmente en la Carrera de Ingeniería Informática'."
+                "text": "Tras meses de arduo estudio y preparación, recibes la esperada carta con sello dorado de la universidad de tus sueños:\n\n\"Nos complace informarle que ha sido admitido formalmente en la carrera\""
             },
             {
                 "title": "EL SUEÑO DEL DESARROLLADOR",
-                "text": "Tu vocación es clara: completar los 4 años de carrera universitaria, dominar el arte de las bases de datos relacionales y el lenguaje SQL desde cero, para algún día liderar proyectos de software en las mayores empresas tecnológicas del mundo."
+                "text": "Tu vocación es clara, completar los cuatro años de carrera y aprender a trabajar con bases de datos relacionales y SQL desde cero\n\nCada clase será un paso para resolver problemas con datos y acercarte al mundo laboral"
             },
             {
                 "title": "LA EXIGENCIA ACADÉMICA",
-                "text": "Pero en esta facultad el rigor es absoluto. Para avanzar de año, deberás asistir a las clases en pizarra del Profesor Marco, resolver los laboratorios diarios y aprobar los rigurosos Exámenes de los Viernes con nota mínima de 4.0.\n\nSi repruebas un año, deberás repetirlo hasta dominarlo por completo."
+                "text": "En esta facultad el rigor es absoluto, para poder avanzar de año deberás asistir a las clases del profesor Marco, resolver los laboratorios y aprobar los exámenes de los viernes con nota mínima de 4.0.\n\nSi repruebas, repetirás ese año para reforzar lo aprendido."
             },
             {
                 "title": "PRIMER DÍA DE CLASES",
-                "text": "Las puertas de la Facultad de Ingeniería Informática se abren ante ti.\n\nEs momento de completar tu ficha de matrícula y personalizar tu carnet de estudiante antes de tomar asiento en el laboratorio..."
+                "text": "Las puertas de la Facultad de Ingeniería Informática se abren ante ti\n\nEs momento de completar tu ficha de matrícula y personalizar tu carnet de estudiante antes de tomar asiento en el laboratorio..."
             }
         ]
 
@@ -102,12 +103,13 @@ class IntroPrologue:
 
         # Texto de la diapositiva con Word-Wrap riguroso
         text_rect = pygame.Rect(box_x + 12, box_y + 26, box_w - 24, box_h - 40)
-        render_wrapped_text(surface, cur_slide["text"], text_rect, self.font_text, color=COLOR_WHITE, line_spacing=3, padding=0)
+        draw_fitted_text(surface,cur_slide["text"],text_rect,self.font_text,COLOR_WHITE,padding=0)
 
         # Indicador de avance
-        prog_txt = f"{self.slide_idx+1:02} / {len(self.slides):02}  ▸"
+        prog_txt = f"{self.slide_idx+1:02} / {len(self.slides):02}"
         p_surf = self.font_hint.render(prog_txt, True, (0, 229, 255))
-        surface.blit(p_surf, (box_x + box_w - p_surf.get_width() - 10, box_y + box_h - 14))
+        surface.blit(p_surf,(box_x+box_w-p_surf.get_width()-28,box_y+box_h-14))
+        advance_indicator(surface,(box_x+box_w-14,box_y+box_h-9),tick,self.slide_idx==len(self.slides)-1)
 
     # --- ILUSTRACIONES PIXEL ART PARA CADA ESCENA ---
 
@@ -173,8 +175,7 @@ class IntroPrologue:
             ("nivel: Senior Dev", (255, 215, 0))
         ]
         for idx, (c_txt, col) in enumerate(code_lines):
-            t_surf = self.font_hint.render(c_txt, True, col)
-            surface.blit(t_surf, (scr_x + 6, scr_y + 6 + (idx * 14)))
+            draw_fitted_text(surface,c_txt,pygame.Rect(scr_x+5,scr_y+5+idx*14,scr_w-10,12),make_font(11),col,padding=0)
 
         # Cursor parpadeante
         if (tick // 25) % 2 == 0:
@@ -198,56 +199,41 @@ class IntroPrologue:
         draw.line(surface, (180, 180, 190), (cx + 6, cy - 3 + s_y), (cx + 9, cy - 12 + s_y), 1)
         draw.line(surface, (180, 180, 190), (cx + 12, cy - 3 - s_y), (cx + 15, cy - 12 - s_y), 1)
 
-        # Libros apilados
-        draw.rect(surface, (30, 80, 160), (100, 144, 45, 8))
-        draw.rect(surface, (180, 140, 30), (102, 136, 42, 8))
-        draw.rect(surface, (160, 40, 40), (105, 128, 38, 8))
-        book_txt = self.font_pixel.render("SQL ANSI", True, COLOR_WHITE)
-        surface.blit(book_txt, (103, 114))
+        # Torre con ventilación, unidades y encendido
+        draw.rect(surface,(53,68,80),(104,62,43,95),border_radius=3)
+        draw.rect(surface,(20,33,46),(108,67,35,85),border_radius=2)
+        for yy in (75,88):
+            draw.rect(surface,(77,94,104),(112,yy,27,8),border_radius=1)
+            draw.line(surface,(131,152,157),(114,yy+3),(132,yy+3))
+        draw.circle(surface,(90,225,184),(125,111),4)
+        for yy in range(127,146,4):draw.line(surface,(65,92,106),(114,yy),(137,yy))
+        draw.line(surface,(48,66,77),(147,148),(161,148),2)
+        draw.ellipse(surface,(110,135,147),(292,150,14,18))
+        draw.line(surface,(36,59,73),(299,151),(299,160))
+        draw.line(surface,(105,139,153),(299,150),(295,141))
 
     def _draw_scene_turing_blackboard(self, surface, tick):
         """Escena 3: Aula magistral con el Profesor Marco explicando Álgebra Relacional."""
-        # Pizarra verde central
-        bx, by, bw, bh = 100, 18, 280, 125
-        draw.rect(surface, COLOR_BOARD_FRAME, (bx, by, bw, bh))
-        draw.rect(surface, COLOR_BOARD, (bx + 3, by + 3, bw - 6, bh - 6))
-
-        # Diagrama de Venn de INNER JOIN en tiza blanca y amarilla
-        cx1, cy1 = 200, 65
-        cx2, cy2 = 235, 65
-        draw.circle(surface, (220, 220, 220), (cx1, cy1), 22, 1)
-        draw.circle(surface, (220, 220, 220), (cx2, cy2), 22, 1)
-        # Intersección iluminada
-        draw.ellipse(surface, COLOR_AMBER, (212, 52, 12, 26))
-
-        # Fórmulas y textos en tiza
-        t1 = self.font_hint.render("A ⋈ B (INNER JOIN)", True, COLOR_CHALK_TEXT)
-        t2 = self.font_hint.render("Aprobación: Nota >= 4.0", True, (160, 240, 180))
-        t3 = self.font_hint.render("Reprobación: Nota < 4.0 (Repite año)", True, (255, 140, 140))
-        surface.blit(t1, (160, 95))
-        surface.blit(t2, (255, 35))
-        surface.blit(t3, (255, 50))
-
-        # Profesor Alan Marco dibujado de cuerpo presente en pixel art
-        px, py = 50, 60
-        # Pelo canoso
-        draw.rect(surface, (220, 220, 225), (px + 6, py - 4, 18, 10))
-        # Cabeza y rostro
-        draw.rect(surface, (255, 205, 148), (px + 8, py + 4, 14, 12))
-        # Ojos y gafas
-        draw.rect(surface, (20, 20, 20), (px + 10, py + 8, 3, 3))
-        draw.rect(surface, (20, 20, 20), (px + 16, py + 8, 3, 3))
-        draw.line(surface, COLOR_AMBER, (px + 9, py + 9), (px + 19, py + 9), 1) # Montura de gafas
-        # Chaqueta de tweed verde
-        draw.rect(surface, (65, 85, 60), (px + 4, py + 16, 22, 28))
-        draw.rect(surface, (240, 240, 245), (px + 12, py + 16, 6, 12)) # Camisa y corbata
-        draw.rect(surface, (160, 40, 40), (px + 14, py + 18, 2, 8))
-        # Pantalón café
-        draw.rect(surface, (80, 60, 45), (px + 7, py + 44, 7, 26))
-        draw.rect(surface, (80, 60, 45), (px + 16, py + 44, 7, 26))
-        # Brazo señalando a la pizarra con tiza blanca
-        draw.line(surface, (65, 85, 60), (px + 24, py + 22), (px + 52, py + 10), 3)
-        draw.circle(surface, (255, 255, 255), (px + 53, py + 9), 2)
+        from game.visuals import board, panel, MINT, GOLD
+        board(surface,pygame.Rect(106,18,326,140))
+        centered(surface,'Aprender, practicar y comprobar',pygame.Rect(117,27,303,20),self.font_pixel,GOLD,padding=0)
+        for cx,label in [(143,'A'),(178,'B')]:
+            draw.circle(surface,(185,210,192),(cx,83),20,1)
+            centered(surface,label,pygame.Rect(cx-8,73,16,17),self.font_pixel,MINT,padding=0)
+        # Operador de cruce dibujado, sin depender de un glifo ausente
+        draw.polygon(surface,GOLD,[(148,118),(160,110),(160,126)],1)
+        draw.polygon(surface,GOLD,[(172,118),(160,110),(160,126)],1)
+        for label,detail,yy,color in [('Aprobación','Nota >= 4.0',57,MINT),('Volver a practicar','Nota < 4.0, repites el año',100,(241,152,138))]:
+            panel(surface,pygame.Rect(215,yy,202,35),(23,49,45),color,shadow=False)
+            draw_fitted_text(surface,label,pygame.Rect(221,yy+3,190,14),self.font_pixel,color,padding=0)
+            draw_fitted_text(surface,detail,pygame.Rect(221,yy+18,190,13),self.font_hint,(225,233,217),padding=0)
+        sprite=pygame.Surface((20,26),pygame.SRCALPHA)
+        marco_sprite(sprite,1,0)
+        sprite.fill((0,0,0,0),pygame.Rect(16,10,4,10))
+        surface.blit(pygame.transform.scale(sprite,(60,78)),(37,70))
+        draw.line(surface,(105,133,95),(83,103),(111,89),5)
+        draw.circle(surface,(239,197,151),(112,88),3)
+        draw.line(surface,(240,244,229),(114,87),(119,83),2)
 
     def _draw_scene_campus_gate(self, surface, tick):
         """Escena 4: El pórtico monumental de entrada a la Facultad de Ingeniería Informática."""
@@ -271,8 +257,7 @@ class IntroPrologue:
         # Gran letrero institucional sobre las columnas
         draw.rect(surface, (18, 24, 38), (100, 24, 280, 18))
         draw.rect(surface, COLOR_AMBER, (100, 24, 280, 18), 1)
-        banner_txt = self.font_pixel.render("FACULTAD DE INGENIERÍA INFORMÁTICA", True, COLOR_AMBER)
-        surface.blit(banner_txt, (125, 27))
+        centered(surface,"FACULTAD DE INGENIERÍA INFORMÁTICA",pygame.Rect(104,25,272,16),self.font_pixel,COLOR_AMBER,padding=0)
 
         # Farolas con luz cálida titilante
         for lx in [60, 420]:

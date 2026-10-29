@@ -1,0 +1,29 @@
+config_version=5
+
+[application]
+config/name="El Camino SQL"
+config/version="0.3.0-beta.1"
+config/icon="res://icon.svg"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/use_custom_user_dir=true
+config/custom_user_dir_name="ElCaminoSQL-Godot"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=800
+window/size/window_width_override=1280
+window/size/window_height_override=800
+window/size/min_width=1000
+window/size/min_height=680
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.06, 0.12, 0.13, 1)
+
+[audio]
+driver/enable_input=false

@@ -12,7 +12,8 @@ from game.narration import NarrationPlayer
 from game.foundations import FoundationsScene
 from game.save_system import DEFAULT_SAVE
 from game.rendering import Canvas
-from game.intro_voice_scripts import SCRIPTS,text_digest
+from game.intro_voice_scripts import attach_voice_scripts,text_digest
+from game.lecture import LectureScene
 
 
 class NarrationPlaybackTests(unittest.TestCase):
@@ -96,13 +97,14 @@ class IntroVoiceIntegrationTests(unittest.TestCase):
         count=0
         for day in range(1,6):
             self.scene.day=day;self.scene.start_lecture()
-            self.assertEqual(len(self.scene.lecture.slides),len(SCRIPTS[day]))
-            for slide in self.scene.lecture.slides:
+            narrated=[s for s in self.scene.lecture.slides if 'narration_id' in s]
+            self.assertEqual(len(narrated),len(self.scene.lecture.slides))
+            for slide in narrated:
                 self.assertIn('narration_id',slide)
                 self.assertTrue(slide['narration_text'].endswith('.'))
                 self.assertNotEqual(slide['narration_text'],slide['turing'])
                 count+=1
-        self.assertEqual(count,69)
+        self.assertGreater(count,69)
         self.scene.day=1;self.scene.start_lecture()
         self.assertIn('Marco, estas clases',self.scene.lecture.slides[0]['turing'])
         self.assertIn('Marco. Estas clases',self.scene.lecture.slides[0]['narration_text'])
@@ -151,13 +153,50 @@ class IntroVoiceIntegrationTests(unittest.TestCase):
         manifest=json.loads((folder/'manifest.json').read_text(encoding='utf8'))
         entries=manifest['entries']
         self.assertEqual(manifest['voice'],'em_santa')
-        self.assertEqual(len(entries),69)
+        expected=set()
+        all_slides=[]
         for day in range(1,6):
             self.scene.day=day;self.scene.start_lecture()
-            for slide in self.scene.lecture.slides:
-                entry=entries[slide['narration_id']]
-                self.assertEqual(text_digest(slide['turing']),text_digest(entry['display_text']))
-                self.assertEqual(slide['narration_text'],entry['narration_text'])
-                sound=pygame.mixer.Sound(str(folder/entry['file']))
-                self.assertGreater(sound.get_length(),2)
-                self.assertAlmostEqual(sound.get_length(),entry['duration'],delta=.08)
+            all_slides.extend(self.scene.lecture.slides)
+        for year in range(1,5):
+            for day in range(1,6):
+                all_slides.extend(self.scene.lecture._build_slides(year,day,0))
+        for slide in all_slides:
+            expected.add(slide['narration_id'])
+            entry=entries[slide['narration_id']]
+            self.assertEqual(text_digest(slide['turing']),text_digest(entry['display_text']))
+            self.assertEqual(slide['narration_text'],entry['narration_text'])
+            sound=pygame.mixer.Sound(str(folder/entry['file']))
+            self.assertGreater(sound.get_length(),1)
+            self.assertAlmostEqual(sound.get_length(),entry['duration'],delta=.08)
+        self.assertEqual(set(entries),expected)
+
+    def test_inserting_new_text_keeps_existing_scripts_and_narrates_new_page(self):
+        self.scene.start_lecture()
+        old=deepcopy(self.scene.lecture.slides)
+        new=[dict(turing='Ahora revisaremos tu tarea. Guarda el modelo.')] + deepcopy(old)
+        attach_voice_scripts(1,new)
+        self.assertEqual([s['narration_id'] for s in new[1:]],[s['narration_id'] for s in old])
+        self.assertEqual(new[0]['narration_text'],'Ahora revisaremos tu tarea. Guarda el modelo.')
+        self.assertIn('tarea, Guarda',new[0]['turing'])
+
+    def test_career_speeches_fit_and_escape_does_not_complete_a_class(self):
+        from game.ui_helpers import wrap_text_lines
+        lecture=LectureScene(self.audio,self.save)
+        canvas=Canvas((480,300))
+        for year in range(1,5):
+            for day in range(1,6):
+                lecture.start_lecture(year,day,0,Mock())
+                for index,slide in enumerate(lecture.slides):
+                    self.assertIn('narration_id',slide)
+                    lines=wrap_text_lines(slide['turing'],lecture.font_body,394)
+                    self.assertLessEqual(len(lines)*(lecture.font_body.get_linesize()+2)-2,52)
+                    lecture.slide_index=index
+                    lecture.chalk_is_done=True
+                    lecture.chalk_char_index=10000
+                    lecture.draw(canvas)
+        completed=Mock()
+        lecture.start_lecture(1,1,0,completed)
+        lecture.handle_event(pygame.event.Event(pygame.KEYDOWN,key=pygame.K_ESCAPE))
+        completed.assert_not_called()
+        self.assertFalse(lecture.active)

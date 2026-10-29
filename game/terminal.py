@@ -404,10 +404,8 @@ class SQLTerminal:
                 # Banner verde de felicitaciones y aviso claro de salida
                 draw.rect(surface, (12, 38, 24), top_rect)
                 draw.rect(surface, (0, 255, 136), top_rect, 1)
-                done_title = self.font_header.render("✓ ¡TODOS LOS EJERCICIOS DEL DÍA COMPLETADOS!", True, (0, 255, 136))
-                surface.blit(done_title, (tx + 14, top_box_y + 4))
-                done_sub = self.font_table.render("Presiona [ESC] para salir del PC e interactúa con el Profesor Marco [E] para avanzar.", True, COLOR_WHITE)
-                surface.blit(done_sub, (tx + 14, top_box_y + 24))
+                draw_fitted_text(surface,'¡Ejercicios del día completos!',pygame.Rect(tx+14,top_box_y+4,tw-28,19),self.font_header,MINT,padding=0)
+                draw_fitted_text(surface,'Puedes seguir consultando o volver a hablar con Marco para cerrar la jornada',pygame.Rect(tx+14,top_box_y+26,tw-28,30),self.font_table,COLOR_WHITE,padding=0)
             else:
                 task = self.curriculum.get_current_task()
                 if task:
@@ -415,12 +413,11 @@ class SQLTerminal:
 
                     curr_idx = self.curriculum.current_task_idx + 1
                     total = self.curriculum.get_total_tasks_today()
-                    status_badge = f"[Progreso: {curr_idx}/{total}]"
-                    t_title = self.font_header.render(fit_text(task.title, self.font_header, tw - 32), True, COLOR_AMBER)
-                    surface.blit(t_title, (tx + 14, top_box_y + 3))
+                    draw_fitted_text(surface,task.title,pygame.Rect(tx+14,top_box_y+2,tw-104,16),self.font_header,COLOR_AMBER,padding=0)
+                    draw_fitted_text(surface,f'{curr_idx}/{total}',pygame.Rect(tx+tw-72,top_box_y+2,50,16),self.font_header,MINT,padding=0)
 
                     obj_rect = pygame.Rect(tx + 14, top_box_y + 17, tw - 32, 44)
-                    render_wrapped_text(surface, task.objective, obj_rect, self.font_table, color=COLOR_WHITE, line_spacing=1, padding=0)
+                    draw_fitted_text(surface,task.objective,obj_rect,self.font_table,COLOR_WHITE,padding=0)
         else:
             panel(surface,top_rect,(23,37,50),GOLD,shadow=False)
             q = self.curriculum.get_current_exam_question()
@@ -428,7 +425,7 @@ class SQLTerminal:
                 e_title = self.font_header.render(fit_text(f"{q.q_num}/{len(self.curriculum.get_current_exam_questions())}: {q.title}", self.font_header, tw - 32), True, COLOR_AMBER)
                 surface.blit(e_title, (tx + 14, top_box_y + 3))
                 obj_rect = pygame.Rect(tx + 14, top_box_y + 17, tw - 32, 44)
-                render_wrapped_text(surface, q.objective, obj_rect, self.font_table, color=COLOR_WHITE, line_spacing=1, padding=0)
+                draw_fitted_text(surface,q.objective,obj_rect,self.font_table,COLOR_WHITE,padding=0)
             else:
                 nota = self.curriculum.exam_final_grade
                 status_txt = "¡AÑO APROBADO!" if nota >= 4.0 else "AÑO REPROBADO (Debes repetir año)"

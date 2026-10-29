@@ -1,4 +1,4 @@
-from game.visuals import panel, button, backdrop, GOLD, MINT
+from game.visuals import panel, button, backdrop, draw_pixel_icon, GOLD, MINT, CRIMSON, AZURE, EMERALD, MUTED, BTN_DANGER, BTN_CREATE, BTN_SUCCESS, BTN_TASK, BTN_NEUTRAL
 """Editor lógico con formularios, relaciones, conversión, zoom y desplazamiento"""
 from copy import deepcopy
 import math
@@ -9,11 +9,11 @@ from game.ui_helpers import draw_fitted_text,render_wrapped_text,paginate_text,d
 from game.sql_syntax import draw_sql
 
 HELP = {
- 'name':'Nombre en singular y MAYÚSCULAS, sin espacios, tildes ni ñ, usa _ entre palabras, por ejemplo ESTUDIANTE o FECHA_NACIMIENTO',
- 'type':'Tipo de origen del atributo lógico, VARCHAR representa texto, NUMERIC números con precisión y escala, DATE una fecha, al convertir se adaptan a SQLite',
- 'length':'Longitud máxima del texto VARCHAR, en la base SQLite generada añadimos una restricción CHECK para comprobarla',
- 'precision':'Cantidad total de dígitos del número, en este taller de SQLite admitimos de 1 a 15 para evitar prometer precisión decimal que REAL no ofrece',
- 'scale':'Dígitos decimales, NUMERIC(10,2) admite hasta ocho dígitos enteros y dos decimales, para identificadores enteros usa escala 0',
+ 'name':'Para las entidades usamos singular y MAYÚSCULAS, como ESTUDIANTE\n\nLos atributos pueden escribirse en minúsculas, como nombre o fecha_nacimiento\n\nUsa _ para separar palabras, anio en lugar de año y letras sin tildes, evita espacios, empieza con una letra',
+ 'type':'VARCHAR describe texto, por ejemplo Moshi\n\nNUMERIC describe números, como 12 o 6.5, DATE describe fechas\n\nAl convertir a SQLite, VARCHAR pasa a TEXT, NUMERIC conserva validaciones de precisión y escala, INTEGER es para enteros y REAL para decimales',
+ 'length':'Longitud es el máximo de caracteres permitidos, no una reserva fija de espacio\n\nCon longitud 1 cabe A, pero Ana tiene 3 caracteres y no cabe\n\nCon longitud 80 caben hasta 80 caracteres, con 100 hasta 100\n\nEn esta base generada, superar el máximo rechaza el registro, un límite muy pequeño impide guardar nombres reales y uno enorme permite textos innecesariamente largos',
+ 'precision':'Precisión es el máximo de dígitos totales, contando enteros y decimales\n\nNUMERIC(4,2) admite 12.50, son 4 dígitos y 2 decimales\n\n125.50 no cabe, necesita 5 dígitos\n\nEs una capacidad máxima, no necesitas llenar todas las posiciones',
+ 'scale':'Escala indica cuántos decimales se permiten\n\nNUMERIC(10,0) admite hasta 10 dígitos enteros y ningún decimal, el 12 cabe porque usa solo 2 de esas 10 posiciones\n\nEl 10 es un máximo, no la cantidad que cada valor debe tener\n\n12.5 no cabe con escala 0, para decimales elige otra escala',
  'uid':'UID primario identifica una instancia de la entidad, puedes marcar varios atributos, juntos formarán una clave primaria compuesta en el modelo relacional',
  'mandatory':'Obligatorio exige un valor, opcional permite NULL, no confundas dato desconocido con cero o texto vacío',
  'transfer_key':'Al convertir, lleva solo los atributos del identificador del origen al destino para formar la FK, si lo desmarcas la asociación queda solo en el modelo lógico, sin integridad automática',
@@ -27,8 +27,8 @@ HELP = {
 
 
 class DesignStudio:
-    def __init__(self,design,on_change,on_notes=lambda:None,task=None,on_test=lambda passed:None):
-        self.design,self.on_change,self.on_notes,self.task,self.on_test = design,on_change,on_notes,task,on_test
+    def __init__(self,design,on_change,on_notes=lambda:None,task=None,on_test=lambda passed:None,task_checklist=None):
+        self.design,self.on_change,self.on_notes,self.task,self.on_test,self.task_checklist = design,on_change,on_notes,task,on_test,task_checklist
         self.font,self.small,self.title = make_font(12),make_font(10),make_font(15)
         self.zoom = .7
         self.offset = [30,55]
@@ -38,6 +38,7 @@ class DesignStudio:
         self.cards=[]
         self.lines=[]
         self.form=None
+        self.task_page=0
         self.focus=None
         self.selection=True
         self.cursor=0
@@ -85,15 +86,17 @@ class DesignStudio:
     def apply_attribute(self):
         value=LogicalDesign.attribute(self.attr)
         attrs=self.entity_draft['attributes']
-        if any(a['name']==value['name'] and i!=self.attribute_index for i,a in enumerate(attrs)):
+        if any(a['name'].casefold()==value['name'].casefold() and i!=self.attribute_index for i,a in enumerate(attrs)):
             raise ValueError('Ya existe un atributo con ese nombre')
         if self.attribute_index is None:
             attrs.append(value)
-            self.attribute_index=len(attrs)-1
         else:
             attrs[self.attribute_index]=value
-        self.attr=deepcopy(value)
-        self.focus=None
+        self.new_attribute()
+        self.attr_scroll=max(0,len(attrs)-7)
+        self.focus=(self.attr,'name')
+        self.cursor=0
+        self.selection=False
         self.status='Atributo aplicado al borrador, Guardar entidad confirma el conjunto'
 
     def new_attribute(self):
@@ -248,7 +251,7 @@ class DesignStudio:
                     if self.selection: value=''; self.cursor=0
                     value=value[:self.cursor]+event.unicode+value[self.cursor:]
                     self.cursor+=len(event.unicode)
-                    obj[key]=value[:80].upper()
+                    obj[key]=value[:80] if obj is self.attr and key=='name' else value[:80].upper()
                     self.selection=False
                 return True
             if mod&pygame.KMOD_CTRL and event.key==pygame.K_z:
@@ -323,9 +326,9 @@ class DesignStudio:
         t=max(0,min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/max(1,dx*dx+dy*dy)))
         return math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy)
 
-    def button(self,surface,label,rect,callback,active=False):
+    def button(self,surface,label,rect,callback,active=False,accent=MINT,fill=None,icon=None,pulse=False):
         rect=pygame.Rect(rect)
-        button(surface,label,rect,self.small,selected=active,accent=MINT)
+        button(surface,label,rect,self.small,selected=active,accent=accent,fill=fill,icon=icon,pulse=pulse)
         self.buttons.append((rect,callback))
 
     def help(self,surface,key,x,y):
@@ -353,21 +356,57 @@ class DesignStudio:
         if help_key: self.help(surface,help_key,pygame.Rect(rect).right+9,pygame.Rect(rect).centery)
 
     def draw_form(self,surface):
+        self.buttons=[]
+        self.fields=[]
+        if self.form=='task_modal':
+            panel(surface,pygame.Rect(44,20,392,260),(16,26,38),GOLD,radius=4)
+            surface.blit(self.title.render('TAREA DE MODELAMIENTO',True,GOLD),(58,28))
+            task_info=self.task_checklist() if self.task_checklist else {"general":self.task() if self.task else "Sin tarea","items":[],"is_complete":True}
+            gen_rect=pygame.Rect(58,50,364,48)
+            panel(surface,gen_rect,(22,34,48),(80,110,140),shadow=False,radius=3)
+            draw_fitted_text(surface,task_info.get("general",""),gen_rect,self.small,(220,235,245),padding=5)
+
+            items=task_info.get("items",[])
+            total_pages=max(1,(len(items)+5)//6)
+            self.task_page=max(0,min(self.task_page,total_pages-1))
+            complete=sum(bool(done) for _,done in items)
+            draw_fitted_text(surface,f'Requisitos: {complete}/{len(items)} | Página {self.task_page+1}/{total_pages}',pygame.Rect(58,102,364,16),self.small,(180,205,220))
+            for i,(req_label,is_done) in enumerate(items[self.task_page*6:(self.task_page+1)*6]):
+                item_y=120+i*18
+                box_color=EMERALD if is_done else GOLD
+                draw.rect(surface,(14,22,32),(58,item_y,364,18),border_radius=2)
+                draw.rect(surface,box_color,(58,item_y,364,18),1,border_radius=2)
+                draw.rect(surface,(20,36,44),(62,item_y+2,14,14),border_radius=2)
+                draw.rect(surface,box_color,(62,item_y+2,14,14),1,border_radius=2)
+                if is_done:draw_pixel_icon(surface,"check",69,item_y+9,EMERALD)
+                else:draw_pixel_icon(surface,"!",69,item_y+9,GOLD)
+                text_color=(200,245,215) if is_done else (235,230,215)
+                draw_fitted_text(surface,req_label,pygame.Rect(82,item_y+1,335,16),self.small,text_color,padding=0)
+
+            all_done=task_info.get("is_complete",False)
+            st_color=EMERALD if all_done else GOLD
+            st_msg="Diseño completo, revisa tu jornada desde el computador" if all_done else "Sigue las casillas pendientes, tus cambios se guardan en el taller"
+            draw_fitted_text(surface,st_msg,pygame.Rect(58,230,364,16),self.small,st_color)
+            if self.task_page>0:self.button(surface,'Anterior',(58,250,100,22),lambda:setattr(self,'task_page',self.task_page-1))
+            self.button(surface,"Cerrar tarea",(180,250,120,22),lambda:setattr(self,'form',None),accent=GOLD,fill=(48,38,18))
+            if self.task_page+1<total_pages:self.button(surface,'Siguiente',(322,250,100,22),lambda:setattr(self,'task_page',self.task_page+1))
+            return
+
         panel(surface,pygame.Rect(46,25,388,267),(18,30,43),GOLD)
         surface.blit(self.title.render('Propiedades de '+('entidad' if self.form=='entity' else 'relación'),True,(250,205,110)),(60,34))
         if self.form=='entity':
-            self.button(surface,'General',(60,53,90,19),lambda:setattr(self,'tab','general'),self.tab=='general')
-            self.button(surface,'Atributos',(156,53,90,19),lambda:setattr(self,'tab','attributes'),self.tab=='attributes')
+            self.button(surface,'General',(60,53,90,19),lambda:setattr(self,'tab','general'),self.tab=='general',accent=AZURE if self.tab=='general' else MUTED)
+            self.button(surface,'Atributos',(156,53,90,19),lambda:setattr(self,'tab','attributes'),self.tab=='attributes',accent=AZURE if self.tab=='attributes' else MUTED)
             if self.tab=='general':
                 self.field(surface,self.entity_draft,'name','Nombre singular',(65,90,335,23),'name')
                 render_wrapped_text(surface,'Ejemplo: ESTUDIANTE\n\nEl modelo lógico contiene entidades y atributos, al convertirlo se crearán las tablas y sus columnas\n\nUsa UID para identificar cada instancia, los atributos todavía se pueden editar antes de generar la base',pygame.Rect(65,127,340,113),self.font,color=(195,215,225),padding=0,line_spacing=3)
             else:
                 draw.rect(surface,(19,32,45),(60,80,116,140))
                 for i,a in enumerate(self.entity_draft['attributes'][self.attr_scroll:self.attr_scroll+7],self.attr_scroll):
-                    self.button(surface,('* ' if a.get('uid') else '')+a['name'],(62,82+(i-self.attr_scroll)*19,112,18),lambda j=i:self.select_attribute(j),i==self.attribute_index)
+                    self.button(surface,('* ' if a.get('uid') else '')+a['name'],(62,82+(i-self.attr_scroll)*19,112,18),lambda j=i:self.select_attribute(j),i==self.attribute_index,accent=AZURE if i==self.attribute_index else MUTED)
                 self.field(surface,self.attr,'name','Nombre',(186,80,214,20),'name')
                 def cycle(): self.attr['type']=ORIGIN_TYPES[(ORIGIN_TYPES.index(self.attr['type'])+1)%len(ORIGIN_TYPES)]
-                self.button(surface,'Tipo de origen: '+self.attr['type'],(186,105,214,20),cycle)
+                self.button(surface,'Tipo de origen: '+self.attr['type'],(186,105,214,20),cycle,accent=AZURE)
                 self.help(surface,'type',409,115)
                 if self.attr['type']=='VARCHAR':
                     self.field(surface,self.attr,'length','Longitud',(186,131,214,20),'length')
@@ -376,11 +415,11 @@ class DesignStudio:
                     self.field(surface,self.attr,'scale','Escala',(306,131,94,20),'scale')
                 self.check(surface,self.attr,'uid','UID primario',(186,160,214,19),'uid')
                 self.check(surface,self.attr,'mandatory','Obligatorio, no permite NULL',(186,184,214,19),'mandatory')
-                self.button(surface,'Aplicar atributo',(186,211,214,20),self.apply_attribute)
-                self.button(surface,'+ Atributo',(60,226,116,19),self.new_attribute)
-                self.button(surface,'Quitar atributo',(186,236,214,19),self.remove_attribute)
-            self.button(surface,'Guardar entidad',(60,265,117,19),self.save_entity)
-            self.button(surface,'Eliminar',(183,265,100,19),self.delete_entity)
+                self.button(surface,'Aplicar atributo',(186,211,214,20),self.apply_attribute,accent=EMERALD,fill=(18,48,30),icon='check')
+                self.button(surface,'+ Añadir otro atributo',(60,226,116,25),self.new_attribute,accent=AZURE,fill=(22,38,62),icon='+')
+                self.button(surface,'Quitar atributo',(186,236,214,19),self.remove_attribute,accent=CRIMSON,fill=(52,24,28),icon='delete')
+            self.button(surface,'Guardar entidad',(60,265,117,19),self.save_entity,accent=EMERALD,fill=(18,50,32),icon='check')
+            self.button(surface,'Eliminar',(183,265,100,19),self.delete_entity,accent=CRIMSON,fill=(52,24,28),icon='delete')
         else:
             r=self.relation_draft
             self.field(surface,r,'name','Nombre',(60,59,340,19),'name')
@@ -390,18 +429,42 @@ class DesignStudio:
             fields=[('transfer_key','Pasar UID para generar FK'),('transferable','Transferible'),('source_optional','Origen opcional'),('target_optional','Destino opcional'),('identifying','Con identificación')]
             for i,(key,label) in enumerate(fields):
                 self.check(surface,r,key,label,(60,154+i*20,340,18),key)
-            self.button(surface,'Guardar relación',(60,265,117,19),self.save_relation)
-            self.button(surface,'Eliminar',(183,265,100,19),self.delete_relation)
-        self.button(surface,'Cancelar',(289,265,117,19),lambda:setattr(self,'form',None))
+            self.button(surface,'Guardar relación',(60,265,117,19),self.save_relation,accent=EMERALD,fill=(18,50,32),icon='check')
+            self.button(surface,'Eliminar',(183,265,100,19),self.delete_relation,accent=CRIMSON,fill=(52,24,28),icon='delete')
+        self.button(surface,'Cancelar',(289,265,117,19),lambda:setattr(self,'form',None),accent=MUTED,fill=(36,42,50))
 
     def draw(self,surface):
         backdrop(surface,(13,24,35))
         panel(surface,pygame.Rect(0,0,480,33),(22,37,49),MINT,shadow=False)
         self.buttons,self.fields,self.cards,self.lines=[],[],[],[]
-        toolbar=[('Tarea',40,lambda:self.show('Tarea actual',self.task() if self.task else 'No hay ninguna tarea actual')),('Nueva\nentidad',48,lambda:self.create_entity()),('1:N',28,lambda:self.relation_tool('1:N')),('1:1',28,lambda:self.relation_tool('1:1')),('N:M',28,lambda:self.relation_tool('N:M')),('Generar\nrelacional',56,self.convert),('Vista\n'+('lógica' if self.relational_tables is None else 'relacional'),48,self.switch_view),('Cuaderno',44,self.on_notes),('-',22,lambda:self.zoom_by(1/1.2)),('+',22,lambda:self.zoom_by(1.2)),('Ajustar',44,self.fit)]
-        x=4
-        for label,width,callback in toolbar:
-            self.button(surface,label,(x,3,width,27),callback); x+=width+3
+        task_lbl = 'Tarea'
+        task_acc = MUTED
+        task_pulse = False
+        task_cb = lambda: self.show('Tarea actual', 'No hay ninguna tarea actual')
+        if self.task_checklist:
+            chk = self.task_checklist()
+            done = chk.get("is_complete", False)
+            task_lbl = "Tarea (✓)" if done else "Tarea (!)"
+            task_acc = EMERALD if done else GOLD
+            task_pulse = not done
+            task_cb = lambda: setattr(self, 'form', 'task_modal')
+        elif self.task:
+            task_acc = GOLD
+            task_cb = lambda: self.show('Tarea actual', self.task() if self.task else 'No hay ninguna tarea actual')
+
+        self.button(surface, task_lbl, (4, 3, 40, 27), task_cb, accent=task_acc, pulse=task_pulse)
+        if self.task_checklist and done:
+            panel(surface,pygame.Rect(4,37,89,18),(16,49,37),EMERALD,shadow=False)
+            draw_fitted_text(surface,'¡Completado!',pygame.Rect(8,38,81,15),self.small,EMERALD,padding=0)
+        self.button(surface, '+ Entidad', (47, 3, 48, 27), lambda: self.create_entity(), accent=AZURE, fill=(22, 38, 62))
+        for x_pos, k in ((98, '1:N'), (126, '1:1'), (154, 'N:M')):
+            self.button(surface, k, (x_pos, 3, 25, 27), lambda kind=k: self.relation_tool(kind), accent=(100, 180, 240))
+        self.button(surface, 'Generar\nSQL', (183, 3, 46, 27), self.convert, accent=EMERALD, fill=(18, 48, 32))
+        self.button(surface, 'Vista\n' + ('Lógica' if self.relational_tables is None else 'SQL'), (232, 3, 44, 27), self.switch_view, accent=(120, 205, 235))
+        self.button(surface, 'Cuaderno', (279, 3, 46, 27), self.on_notes, accent=GOLD)
+        self.button(surface, '-', (328, 3, 18, 27), lambda: self.zoom_by(1 / 1.2), accent=MUTED)
+        self.button(surface, '+', (349, 3, 18, 27), lambda: self.zoom_by(1.2), accent=MUTED)
+        self.button(surface, 'Ajustar', (370, 3, 40, 27), self.fit, accent=MUTED)
         area=pygame.Rect(0,34,480,243)
         clip=surface.get_clip()
         surface.set_clip(clip.clip(area))

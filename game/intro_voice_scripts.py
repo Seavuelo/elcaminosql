@@ -1,93 +1,88 @@
-"""Guion de locución independiente del texto visible, voz Santa de Marco"""
+"""Guiones separados, con pausas naturales y referencias estables por contenido"""
 import hashlib
+import re
 
-INVITATION='Ya, vamos a hacer un Kashut. Únanse desde su computador, a ver si quedan en el podio. Lean con calma antes de responder. Después repasamos juntos las preguntas que hayan costado.'
-SCRIPTS={
-1:[
- 'Soy el profesor Marco. Estas clases son opcionales y sirven para entender bien los fundamentos, antes de empezar la carrera.',
- 'Hoy nos acompañan Moshi, Carlos, Sofía y Matías. Primero conversaremos sobre las ideas. No tienes que crear tablas el primer día.',
- 'Imagina que la universidad anota estudiantes y tutorías en papeles distintos. Cuando alguien cambia su nombre, cuesta saber qué registros corregir.',
- 'Una base de datos organiza esa información. Así podemos encontrarla, relacionarla y mantenerla coherente.',
- 'En esta lista, cada fila representa a una persona. Las columnas indican qué sabemos de ella.',
- 'El nombre de una columna describe una característica. Moshi es un valor de esa característica. No es una columna.',
- 'SQL significa lenguaje de consulta estructurada. Sirve para definir tablas, consultar registros y cambiar información.',
- 'SQLite es el programa que interpreta SQL en este juego. El dibujo del modelo ayuda a planificar. No reemplaza al motor.',
- 'Para pedir los nombres, indicamos qué columna queremos y de qué tabla debe salir. No recorremos las filas a mano.',
- 'SELECT elige la información. FROM nombra su origen. Durante la carrera aprenderemos a construir estas consultas.',
- 'Primero decide qué representa cada fila y qué datos necesitas guardar. El modelo es ese plan.',
- 'Una tabla de estudiantes y otra de tutorías representan cosas distintas. Pronto las conectaremos, sin copiar el nombre del estudiante en cada tutoría.',
- 'Un estudiante es algo que queremos representar. A ese tipo de cosa le llamamos entidad. Su nombre y su promedio son atributos.',
- 'Al organizar esos datos en tablas y definir cómo se relacionan, construimos un modelo relacional. Las cajas del dibujo nos ayudan a pensar ese diseño.',
- INVITATION],
-2:[
- 'Queremos guardar un identificador, el nombre y el promedio de cada estudiante.',
- 'Separarlos permite buscar y ordenar cada característica. Juntar nombre y promedio en un solo texto dificultaría trabajar con el promedio como número.',
- 'INTEGER es adecuado para identificadores o cantidades enteras. TEXT se usa para nombres. REAL, para valores que pueden tener decimales.',
- 'Por ejemplo, el identificador uno es de tipo INTEGER. Moshi es un valor de tipo TEXT. El promedio seis coma ocho es de tipo REAL.',
- 'En el modelador elegimos VARCHAR para texto, NUMERIC para números y DATE para fechas.',
- 'NUMERIC, con precisión diez y escala dos, significa diez dígitos totales y dos decimales. Para un identificador entero, podemos usar escala cero. Una fecha se representará con el año, el mes y el día.',
- 'Un código como cero, cero, uno, dos, puede necesitar conservar sus ceros iniciales. Un teléfono también puede incluir un signo más.',
- 'Si no vamos a hacer cálculos con esos valores, TEXT puede representar mejor su significado. BLOB se utiliza para bytes. Por ejemplo, para el contenido de un archivo.',
- 'Si el promedio todavía no está calculado, podemos dejarlo como NULL. Eso expresa que falta información.',
- 'No es lo mismo que un promedio cero. Tampoco es la palabra NULL guardada como texto. Más adelante aprenderemos a consultar esas diferencias.',
- 'SQLite usa afinidades de tipos. Puede convertir o aceptar valores que otros motores rechazarían.',
- 'Elegir REAL no impone, por sí solo, una nota entre uno y siete. Una regla del negocio necesita una restricción o una validación adicional.',
- 'En tu computador, abre el modelador y pulsa Nueva entidad. En la sección General escribe ESTUDIANTE, en singular y mayúsculas.',
- 'En Atributos, añade un identificador numérico, un nombre de tipo VARCHAR y un promedio numérico. Aplica cada atributo y guarda la entidad. Hoy todavía no necesitas relacionarla con otra.',
- INVITATION],
-3:[
- 'Dos estudiantes pueden llamarse igual, y una persona puede corregir su nombre. Por eso no conviene usarlo para distinguir registros.',
- 'Una clave primaria identifica cada fila sin confundirla con otra. Puede ser un identificador que se mantenga estable.',
- 'PK significa PRIMARY KEY. El identificador no puede repetirse entre filas de la misma tabla.',
- 'En este taller usamos una columna como clave primaria. La marcamos también como obligatoria. El identificador no tiene que coincidir con el número de asiento.',
- 'NN significa NOT NULL. Exige un valor en esa columna.',
- 'Para inscribir a alguien, necesitamos su nombre. Pero podemos dejar su promedio pendiente. El nombre será obligatorio. El promedio podrá aceptar NULL.',
- 'Abre las propiedades de ESTUDIANTE. En Atributos, marca el identificador como UID primario, y el nombre como obligatorio.',
- 'Al convertir, el UID se transforma en PRIMARY KEY. Si varios atributos forman el identificador, su combinación será una clave primaria compuesta. No se exige que cada parte sea única por separado.',
- INVITATION],
-4:[
- 'Moshi puede asistir a dos tutorías. Si copiamos su nombre en cada una, tendríamos que corregirlo en varios lugares.',
- 'Guardaremos a Moshi una sola vez en estudiantes. Cada tutoría conservará el identificador de su estudiante.',
- 'En la tabla de tutorías, el identificador del estudiante guardará un valor que ya existe en la clave de estudiantes.',
- 'Esa referencia es una clave foránea. FK significa FOREIGN KEY. La flecha del modelador muestra qué columna apunta a qué clave.',
- 'Un estudiante puede tener varias tutorías. Pero cada tutoría de este modelo pertenece a un estudiante.',
- 'El lado de estudiantes es el uno. El lado de tutorías es el muchos. El identificador del estudiante puede repetirse. Quien no debe repetirse es el identificador de la tutoría.',
- 'Con la comprobación de claves foráneas activada, SQLite rechaza una tutoría que apunta al estudiante novecientos noventa y nueve, si ese estudiante no existe.',
- 'Una clave foránea que permite NULL podría no indicar estudiante. Aquí la marcaremos como obligatoria, porque toda tutoría debe tener uno.',
- 'Crea TUTORIA con un identificador primario y un tema de tipo VARCHAR. Pulsa uno a muchos. Selecciona primero ESTUDIANTE y después TUTORIA.',
- 'Nombra la relación y marca pasar UID. Al generar el relacional, aparecerá el identificador del estudiante como clave foránea en TUTORIA. No necesitas escribir ni copiar a mano esa columna.',
- 'Un estudiante puede cursar varias materias. Una materia puede tener varios estudiantes. Ahí ambos lados son muchos.',
- 'Podemos crear una tabla intermedia, inscripciones. Tendrá una clave foránea al estudiante y otra a la materia. Cada fila representa una inscripción. Nuestro taller empieza con la relación más sencilla de tutorías.',
- 'La pata de gallo indica muchos. La barra indica uno. Un círculo permite cero instancias.',
- 'En el taller dibujamos punteada la relación si el origen es opcional. Eso permite que el destino exista sin un padre. Exigir que un padre tenga hijos necesita, además, una regla del proceso.',
- 'Una línea de un pedido puede identificarse con el identificador del pedido y el número de línea. El identificador del padre participa en el del hijo.',
- 'Eso es una relación identificadora. No copia todos los datos del padre. Si el hijo ya tiene su propio identificador independiente, esa identificación compartida puede no ser necesaria.',
- 'En una relación uno a uno, cada destino puede vincularse con un solo origen. La clave foránea también será única.',
- 'Transferible permite cambiar el padre de una instancia. Si se desmarca, el SQL generado bloqueará cambiar una referencia que ya estaba asignada. Los nombres tiene y pertenece describen los dos sentidos.',
- INVITATION],
-5:[
- 'El modelador puede transformar tus cajas, columnas y relaciones en una instrucción CREATE TABLE.',
- 'Ver SQL muestra la definición que produciría tu diseño. La comprobación construye esas tablas en una base temporal de SQLite. Tu base de la carrera queda separada.',
- 'Nuestro diseño lógico no es una base Oracle. Lo convertimos a SQLite para practicar aquí.',
- 'VARCHAR se transforma en TEXT, con una comprobación de longitud. DATE se transforma en texto con una fecha validada. NUMERIC conserva sus límites de precisión y escala, dentro de las posibilidades del taller.',
- 'Un diseño no se comprueba solo guardando un registro válido.',
- 'Vamos a intentar repetir una clave primaria, omitir un nombre obligatorio y crear una tutoría de un estudiante inexistente. Lo correcto será que el motor rechace esos tres intentos.',
- 'Desde tu computador, pulsa Probar modelo del taller. Se insertará una estudiante y dos tutorías en una base temporal.',
- 'Verás los resultados y los intentos rechazados. No cambiamos la base de la carrera. Eso permite comparar el dibujo con lo que SQLite realmente acepta.',
- 'Ya puedes explicar qué representa una tabla, cómo identifica sus filas y cómo se relaciona con otra.',
- 'Ahora empieza el primer año. Aprenderás a consultar esos datos con SQL. Podrás volver al modelador desde la sala, con la tecla M.',
- INVITATION],
+APPROVED = {
+  "Soy el profesor Marco, estas clases son opcionales y sirven para entender bien los fundamentos antes de empezar la carrera": "Soy el profesor Marco. Estas clases son opcionales y sirven para entender bien los fundamentos, antes de empezar la carrera.",
+  "Hoy nos acompañan Moshi, Carlos, Sofía y Matías, primero conversaremos sobre las ideas, no tienes que crear tablas el primer día": "Hoy nos acompañan Moshi, Carlos, Sofía y Matías. Primero conversaremos sobre las ideas. No tienes que crear tablas el primer día.",
+  "Imagina que la universidad anota estudiantes y tutorías en papeles distintos, cuando alguien cambia su nombre cuesta saber qué registros corregir": "Imagina que la universidad anota estudiantes y tutorías en papeles distintos. Cuando alguien cambia su nombre, cuesta saber qué registros corregir.",
+  "Una base de datos organiza esa información para encontrarla, relacionarla y mantenerla coherente": "Una base de datos organiza esa información. Así podemos encontrarla, relacionarla y mantenerla coherente.",
+  "En esta lista cada fila representa una persona, las columnas indican qué sabemos de ella": "En esta lista, cada fila representa a una persona. Las columnas indican qué sabemos de ella.",
+  "El nombre de una columna describe una característica, Moshi es un valor de esa característica, no una columna": "El nombre de una columna describe una característica. Moshi es un valor de esa característica. No es una columna.",
+  "SQL significa lenguaje de consulta estructurada, sirve para definir tablas, consultar registros y cambiar información": "SQL significa lenguaje de consulta estructurada. Sirve para definir tablas, consultar registros y cambiar información.",
+  "SQLite es el programa que interpreta SQL en este juego, el dibujo del modelo ayuda a planificar, no reemplaza al motor": "SQLite es el programa que interpreta SQL en este juego. El dibujo del modelo ayuda a planificar. No reemplaza al motor.",
+  "Para pedir los nombres indicamos qué columna queremos y de qué tabla debe salir, no recorremos las filas a mano": "Para pedir los nombres, indicamos qué columna queremos y de qué tabla debe salir. No recorremos las filas a mano.",
+  "SELECT elige la información y FROM nombra su origen, durante la carrera aprenderemos a construir estas consultas": "SELECT elige la información. FROM nombra su origen. Durante la carrera aprenderemos a construir estas consultas.",
+  "Primero decide qué representa cada fila y qué datos necesitas guardar, el modelo es ese plan": "Primero decide qué representa cada fila y qué datos necesitas guardar. El modelo es ese plan.",
+  "Una tabla de estudiantes y otra de tutorías representan cosas distintas, pronto las conectaremos sin copiar el nombre del estudiante en cada tutoría": "Una tabla de estudiantes y otra de tutorías representan cosas distintas. Pronto las conectaremos, sin copiar el nombre del estudiante en cada tutoría.",
+  "Un estudiante es algo que queremos representar, a ese tipo de cosa le llamamos entidad, su nombre y su promedio son atributos": "Un estudiante es algo que queremos representar. A ese tipo de cosa le llamamos entidad. Su nombre y su promedio son atributos.",
+  "Al organizar esos datos en tablas y definir cómo se relacionan construimos un modelo relacional, las cajas del dibujo nos ayudan a pensar ese diseño": "Al organizar esos datos en tablas y definir cómo se relacionan, construimos un modelo relacional. Las cajas del dibujo nos ayudan a pensar ese diseño.",
+  "Ya, vamos a hacer un Kashut, únanse desde su computador a ver si quedan en el podio, lean con calma antes de responder, después repasamos juntos las preguntas que hayan costado": "Ya, vamos a hacer un Kashut. Únanse desde su computador, a ver si quedan en el podio. Lean con calma antes de responder. Después repasamos juntos las preguntas que hayan costado.",
+  "Queremos guardar un identificador, el nombre y el promedio de cada estudiante": "Queremos guardar un identificador, el nombre y el promedio de cada estudiante.",
+  "Separarlos permite buscar y ordenar cada característica, juntar nombre y promedio en un solo texto dificultaría trabajar con el promedio como número": "Separarlos permite buscar y ordenar cada característica. Juntar nombre y promedio en un solo texto dificultaría trabajar con el promedio como número.",
+  "INTEGER es adecuado para identificadores o cantidades enteras, TEXT para nombres y REAL para valores que pueden tener decimales": "INTEGER es adecuado para identificadores o cantidades enteras. TEXT se usa para nombres. REAL, para valores que pueden tener decimales.",
+  "Por ejemplo, id 1 es INTEGER, Moshi es TEXT y promedio 6.8 es REAL": "Por ejemplo, el identificador uno es de tipo INTEGER. Moshi es un valor de tipo TEXT. El promedio seis coma ocho es de tipo REAL.",
+  "En el modelador elegimos VARCHAR para texto, NUMERIC para números y DATE para fechas": "En el modelador elegimos VARCHAR para texto, NUMERIC para números y DATE para fechas.",
+  "NUMERIC(10,2) significa diez dígitos totales y dos decimales, para un identificador entero podemos usar NUMERIC(10,0), DATE se representará como una fecha AAAA-MM-DD": "NUMERIC, con precisión diez y escala dos, significa diez dígitos totales y dos decimales. Para un identificador entero, podemos usar escala cero. Una fecha se representará con el año, el mes y el día.",
+  "Un código como 0012 puede necesitar conservar sus ceros iniciales, un teléfono también puede incluir un signo más": "Un código como cero, cero, uno, dos, puede necesitar conservar sus ceros iniciales. Un teléfono también puede incluir un signo más.",
+  "Si no vamos a hacer cálculos con esos valores, TEXT puede representar mejor su significado, BLOB se utiliza para bytes, por ejemplo el contenido de un archivo": "Si no vamos a hacer cálculos con esos valores, TEXT puede representar mejor su significado. BLOB se utiliza para bytes. Por ejemplo, para el contenido de un archivo.",
+  "Si el promedio todavía no está calculado podemos dejarlo como NULL, eso expresa que falta información": "Si el promedio todavía no está calculado, podemos dejarlo como NULL. Eso expresa que falta información.",
+  "No es lo mismo que promedio cero, tampoco es la palabra NULL guardada como texto, más adelante aprenderemos a consultar esas diferencias": "No es lo mismo que un promedio cero. Tampoco es la palabra NULL guardada como texto. Más adelante aprenderemos a consultar esas diferencias.",
+  "SQLite usa afinidades de tipos y puede convertir o aceptar valores que otros motores rechazarían": "SQLite usa afinidades de tipos. Puede convertir o aceptar valores que otros motores rechazarían.",
+  "Elegir REAL no impone por sí solo una nota entre 1 y 7, una regla del negocio necesita una restricción o una validación adicional": "Elegir REAL no impone, por sí solo, una nota entre uno y siete. Una regla del negocio necesita una restricción o una validación adicional.",
+  "En tu computador abre el modelador y pulsa Nueva entidad, en General escribe ESTUDIANTE, en singular y mayúsculas": "En tu computador, abre el modelador y pulsa Nueva entidad. En la sección General escribe ESTUDIANTE, en singular y mayúsculas.",
+  "En Atributos añade ID numérico, NOMBRE VARCHAR y PROMEDIO numérico, aplica cada atributo y guarda la entidad, hoy todavía no necesitas relacionarla con otra": "En Atributos, añade un identificador numérico, un nombre de tipo VARCHAR y un promedio numérico. Aplica cada atributo y guarda la entidad. Hoy todavía no necesitas relacionarla con otra.",
+  "Dos estudiantes pueden llamarse igual y una persona puede corregir su nombre, por eso no conviene usarlo para distinguir registros": "Dos estudiantes pueden llamarse igual, y una persona puede corregir su nombre. Por eso no conviene usarlo para distinguir registros.",
+  "Una clave primaria identifica cada fila sin confundirla con otra, puede ser un id que se mantenga estable": "Una clave primaria identifica cada fila sin confundirla con otra. Puede ser un identificador que se mantenga estable.",
+  "PK significa PRIMARY KEY, el identificador no puede repetirse entre filas de la misma tabla": "PK significa PRIMARY KEY. El identificador no puede repetirse entre filas de la misma tabla.",
+  "En este taller usamos una columna como clave primaria y la marcamos también como obligatoria, el id no tiene que coincidir con el número de asiento": "En este taller usamos una columna como clave primaria. La marcamos también como obligatoria. El identificador no tiene que coincidir con el número de asiento.",
+  "NN significa NOT NULL, exige un valor en esa columna": "NN significa NOT NULL. Exige un valor en esa columna.",
+  "Para inscribir a alguien necesitamos su nombre, pero podemos dejar su promedio pendiente, nombre será obligatorio y promedio podrá aceptar NULL": "Para inscribir a alguien, necesitamos su nombre. Pero podemos dejar su promedio pendiente. El nombre será obligatorio. El promedio podrá aceptar NULL.",
+  "Abre las propiedades de ESTUDIANTE, en Atributos marca ID como UID primario y NOMBRE como obligatorio": "Abre las propiedades de ESTUDIANTE. En Atributos, marca el identificador como UID primario, y el nombre como obligatorio.",
+  "Al convertir, el UID se transforma en PRIMARY KEY, si varios atributos forman el UID, su combinación será una clave primaria compuesta, no se exige que cada parte sea única por separado": "Al convertir, el UID se transforma en PRIMARY KEY. Si varios atributos forman el identificador, su combinación será una clave primaria compuesta. No se exige que cada parte sea única por separado.",
+  "Moshi puede asistir a dos tutorías, si copiamos su nombre en cada una tendríamos que corregirlo en varios lugares": "Moshi puede asistir a dos tutorías. Si copiamos su nombre en cada una, tendríamos que corregirlo en varios lugares.",
+  "Guardaremos a Moshi una sola vez en estudiantes y cada tutoría conservará el id de su estudiante": "Guardaremos a Moshi una sola vez en estudiantes. Cada tutoría conservará el identificador de su estudiante.",
+  "En tutorias, estudiante_id guardará un identificador que ya existe en estudiantes.id": "En la tabla de tutorías, el identificador del estudiante guardará un valor que ya existe en la clave de estudiantes.",
+  "Esa referencia es una clave foránea, FK significa FOREIGN KEY, la flecha del modelador muestra qué columna apunta a qué clave": "Esa referencia es una clave foránea. FK significa FOREIGN KEY. La flecha del modelador muestra qué columna apunta a qué clave.",
+  "Un estudiante puede tener varias tutorías, pero cada tutoría de este modelo pertenece a un estudiante": "Un estudiante puede tener varias tutorías. Pero cada tutoría de este modelo pertenece a un estudiante.",
+  "El lado estudiantes es el uno y el lado tutorias es el muchos, estudiante_id puede repetirse, quien no debe repetirse es tutorias.id": "El lado de estudiantes es el uno. El lado de tutorías es el muchos. El identificador del estudiante puede repetirse. Quien no debe repetirse es el identificador de la tutoría.",
+  "Con la comprobación de claves foráneas activada, SQLite rechaza una tutoría que apunta al estudiante 999 si ese estudiante no existe": "Con la comprobación de claves foráneas activada, SQLite rechaza una tutoría que apunta al estudiante novecientos noventa y nueve, si ese estudiante no existe.",
+  "Una FK que permite NULL podría no indicar estudiante, aquí la marcaremos NN porque toda tutoría debe tener uno": "Una clave foránea que permite NULL podría no indicar estudiante. Aquí la marcaremos como obligatoria, porque toda tutoría debe tener uno.",
+  "Crea TUTORIA con ID como UID primario y TEMA VARCHAR, pulsa 1:N y selecciona primero ESTUDIANTE y después TUTORIA": "Crea TUTORIA con un identificador primario y un tema de tipo VARCHAR. Pulsa uno a muchos. Selecciona primero ESTUDIANTE y después TUTORIA.",
+  "Nombra la relación y marca pasar UID, al generar el relacional aparecerá ESTUDIANTE_ID como FK en TUTORIA, no necesitas escribir ni copiar a mano esa columna": "Nombra la relación y marca pasar UID. Al generar el relacional, aparecerá el identificador del estudiante como clave foránea en TUTORIA. No necesitas escribir ni copiar a mano esa columna.",
+  "Un estudiante puede cursar varias materias y una materia puede tener varios estudiantes, ahí ambos lados son muchos": "Un estudiante puede cursar varias materias. Una materia puede tener varios estudiantes. Ahí ambos lados son muchos.",
+  "Podemos crear una tabla intermedia, inscripciones, con una FK al estudiante y otra a la materia, cada fila representa una inscripción, nuestro taller empieza con la relación más sencilla de tutorías": "Podemos crear una tabla intermedia, inscripciones. Tendrá una clave foránea al estudiante y otra a la materia. Cada fila representa una inscripción. Nuestro taller empieza con la relación más sencilla de tutorías.",
+  "La pata de gallo indica muchos y la barra indica uno, un círculo permite cero instancias": "La pata de gallo indica muchos. La barra indica uno. Un círculo permite cero instancias.",
+  "En el taller dibujamos punteada la relación si el origen es opcional, eso permite que el destino exista sin un padre, exigir que un padre tenga hijos necesita además una regla del proceso": "En el taller dibujamos punteada la relación si el origen es opcional. Eso permite que el destino exista sin un padre. Exigir que un padre tenga hijos necesita, además, una regla del proceso.",
+  "Una línea de un pedido puede identificarse con PEDIDO_ID y NUMERO_LINEA, el identificador del padre participa en el del hijo": "Una línea de un pedido puede identificarse con el identificador del pedido y el número de línea. El identificador del padre participa en el del hijo.",
+  "Eso es una relación identificadora, no copia todos los datos del padre, si el hijo ya tiene su propio identificador independiente, esa identificación compartida puede no ser necesaria": "Eso es una relación identificadora. No copia todos los datos del padre. Si el hijo ya tiene su propio identificador independiente, esa identificación compartida puede no ser necesaria.",
+  "En una relación 1:1 cada destino puede vincularse con un solo origen y la FK también será única": "En una relación uno a uno, cada destino puede vincularse con un solo origen. La clave foránea también será única.",
+  "Transferible permite cambiar el padre de una instancia, si se desmarca el SQL generado bloqueará cambiar una referencia que ya estaba asignada, los nombres tiene y pertenece describen los dos sentidos": "Transferible permite cambiar el padre de una instancia. Si se desmarca, el SQL generado bloqueará cambiar una referencia que ya estaba asignada. Los nombres tiene y pertenece describen los dos sentidos.",
+  "El modelador puede transformar tus cajas, columnas y relaciones en CREATE TABLE": "El modelador puede transformar tus cajas, columnas y relaciones en una instrucción CREATE TABLE.",
+  "Ver SQL muestra la definición que produciría tu diseño, Comprobar construye esas tablas en una base temporal de SQLite, tu base de la carrera queda separada": "Ver SQL muestra la definición que produciría tu diseño. La comprobación construye esas tablas en una base temporal de SQLite. Tu base de la carrera queda separada.",
+  "Nuestro diseño lógico no es una base Oracle, lo convertimos a SQLite para practicar aquí": "Nuestro diseño lógico no es una base Oracle. Lo convertimos a SQLite para practicar aquí.",
+  "VARCHAR se transforma en TEXT con un CHECK de longitud, DATE en texto ISO validado y NUMERIC conserva sus límites de precisión y escala dentro de las posibilidades del taller": "VARCHAR se transforma en TEXT, con una comprobación de longitud. DATE se transforma en texto con una fecha validada. NUMERIC conserva sus límites de precisión y escala, dentro de las posibilidades del taller.",
+  "Un diseño no se comprueba solo guardando un registro válido": "Un diseño no se comprueba solo guardando un registro válido.",
+  "Vamos a intentar repetir una PK, omitir un nombre obligatorio y crear una tutoría de un estudiante inexistente, lo correcto será que el motor rechace esos tres intentos": "Vamos a intentar repetir una clave primaria, omitir un nombre obligatorio y crear una tutoría de un estudiante inexistente. Lo correcto será que el motor rechace esos tres intentos.",
+  "Desde tu computador pulsa Probar modelo del taller, se insertará una estudiante y dos tutorías en una base temporal": "Desde tu computador, pulsa Probar modelo del taller. Se insertará una estudiante y dos tutorías en una base temporal.",
+  "Verás los resultados y los intentos rechazados, no cambiamos la base de la carrera, eso permite comparar el dibujo con lo que SQLite realmente acepta": "Verás los resultados y los intentos rechazados. No cambiamos la base de la carrera. Eso permite comparar el dibujo con lo que SQLite realmente acepta.",
+  "Ya puedes explicar qué representa una tabla, cómo identifica sus filas y cómo se relaciona con otra": "Ya puedes explicar qué representa una tabla, cómo identifica sus filas y cómo se relaciona con otra.",
+  "Ahora empieza el primer año, aprenderás a consultar esos datos con SQL, podrás volver al modelador desde la sala con M": "Ahora empieza el primer año. Aprenderás a consultar esos datos con SQL. Podrás volver al modelador desde la sala, con la tecla M."
 }
-
 
 def text_digest(text):
     return hashlib.sha256(' '.join(text.split()).encode('utf8')).hexdigest()
 
 
-def attach_voice_scripts(day,slides):
-    scripts=SCRIPTS[day]
-    if len(scripts)!=len(slides):
-        raise ValueError(f'El día {day} tiene {len(slides)} páginas pero {len(scripts)} guiones, revisa la locución antes de publicar')
-    for index,(slide,script) in enumerate(zip(slides,scripts),1):
-        slide['narration_id']=f'intro_d{day}_s{index:02}'
-        slide['narration_text']=script
+def display_text(text):
+    return re.sub(r'\.(?=\s|$)', ',', text).rstrip(',').strip()
+
+
+def attach_voice_scripts(day, slides, year=0):
+    for slide in slides:
+        original = slide['turing']
+        script = slide.get('narration_text') or APPROVED.get(' '.join(original.split()), original.rstrip(' ,.') + '.')
+        slide['turing'] = display_text(original)
+        slide['narration_text'] = script
+        scope = f'intro_d{day}' if year == 0 else f'career_y{year}_d{day}'
+        slide['narration_id'] = scope + '_' + text_digest(slide['turing'] + script)[:16]

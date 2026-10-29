@@ -8,9 +8,9 @@ import uuid
 ORIGIN_TYPES = ('VARCHAR','NUMERIC','DATE','INTEGER','REAL','BLOB')
 
 
-def name(value):
-    value = value.strip().upper()
-    if not re.fullmatch(r'[A-Z][A-Z0-9_]{0,39}',value):
+def name(value,uppercase=True):
+    value = value.strip().upper() if uppercase else value.strip()
+    if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{0,39}',value):
         raise ValueError('Usa letras sin tildes ni ñ, números y _, sin espacios, empieza con una letra, máximo 40 caracteres')
     return value
 
@@ -52,7 +52,7 @@ class LogicalDesign:
     @staticmethod
     def attribute(value):
         value = deepcopy(value)
-        value['name'] = name(value['name'])
+        value['name'] = name(value['name'],uppercase=False)
         if value['type'] not in ORIGIN_TYPES:
             raise ValueError('Elige un tipo de origen disponible')
         try:
@@ -75,7 +75,7 @@ class LogicalDesign:
         if any(e['name']==value['name'] and e['name']!=old for e in self.entities):
             raise ValueError('Ya existe una entidad con ese nombre')
         value['attributes'] = [self.attribute(a) for a in value['attributes']]
-        if len({a['name'] for a in value['attributes']}) != len(value['attributes']):
+        if len({a['name'].casefold() for a in value['attributes']}) != len(value['attributes']):
             raise ValueError('Los atributos de una entidad no pueden repetir el nombre')
         current = self.entity(old)
         if current:
@@ -138,7 +138,8 @@ class LogicalDesign:
             fields = []
             for attr in primary:
                 label = (prefix or source['name'])+'_'+attr['name']
-                existing = next((a for a in target['columns'] if a['name']==label),None)
+                if attr['name'].islower():label=label.lower()
+                existing = next((a for a in target['columns'] if a['name'].casefold()==label.casefold()),None)
                 if existing and existing['type']!=attr['type']:
                     raise ValueError(f'La columna {label} ya existe con otro tipo')
                 if not existing:
@@ -146,7 +147,7 @@ class LogicalDesign:
                     target['columns'].append(existing)
                 existing['uid'] = existing.get('uid',False) or identifying
                 existing['mandatory'] = existing.get('mandatory',False) or not optional or identifying
-                fields.append(label)
+                fields.append(existing['name'])
             foreign = dict(name=rel['name'],columns=fields,table=source['name'],target_columns=[a['name'] for a in primary],transferable=rel.get('transferable',True))
             if not any(f['name']==rel['name'] and f['table']==source['name'] for f in target['foreign_keys']):
                 target['foreign_keys'].append(foreign)

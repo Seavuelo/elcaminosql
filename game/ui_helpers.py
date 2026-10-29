@@ -82,14 +82,16 @@ def draw_panel(surface, rect, bg_color=(14, 18, 28, 240), border_color=COLOR_CYA
         t_surf = font.render(fit_text(title, font, rect.width - 16), True, title_color)
         surface.blit(t_surf, (rect.x + 8, rect.y + 4))
 
-def fitted_text_layout(text, font, width, min_size=8):
-    """Reduce primero la fuente y luego envuelve, sin eliminar caracteres"""
+def fitted_text_layout(text, font, width, min_size=8, height=None):
+    """Con altura disponible, conserva la fuente mientras el texto envuelto quepa"""
     text = str(text)
     point_size = getattr(font, "point_size", 12)
     selected = font
     for size in range(point_size, min_size - 1, -1):
         selected = font if size == point_size else make_font(size)
-        if selected.size(text)[0] <= width:
+        if size!=point_size:selected.set_bold(font.get_bold())
+        lines = wrap_text_lines(text, selected, max(1, width))
+        if (height is None and selected.size(text)[0] <= width) or (height is not None and len(lines)*selected.get_linesize()<=height):
             break
     lines = wrap_text_lines(text, selected, max(1, width))
     return selected, lines
@@ -97,12 +99,15 @@ def fitted_text_layout(text, font, width, min_size=8):
 
 def draw_fitted_text(surface, text, rect, font, color=COLOR_WHITE, padding=4):
     rect = pygame.Rect(rect)
-    selected, lines = fitted_text_layout(text, font, rect.width - padding * 2)
+    selected, lines = fitted_text_layout(text, font, rect.width - padding * 2,height=rect.height-padding*2)
     height = len(lines) * selected.get_linesize()
     top = rect.y + max(padding, (rect.height - height) // 2)
+    previous=surface.get_clip()
+    surface.set_clip(previous.clip(rect))
     render_wrapped_text(surface, "\n".join(lines), pygame.Rect(rect.x + padding, top,
                         max(1, rect.width - padding * 2), height), selected,
                         color=color, line_spacing=0, padding=0)
+    surface.set_clip(previous)
 
 
 def draw_sql_grid_table(surface, rect, columns, rows, col_types=None, font=None, max_rows=7):

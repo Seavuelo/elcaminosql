@@ -34,6 +34,10 @@ class ReadableFont:
     def get_linesize(self):
         return math.ceil(self.detailed.get_linesize() / DETAIL)
 
+    def set_bold(self,value):
+        self.base.set_bold(value)
+        self.detailed.set_bold(value)
+
     def render(self, text, antialias, color, background=None):
         detailed = self.detailed.render(str(text), True, color, background)
         size = self.size(text)

@@ -13,10 +13,10 @@ FOUNDATION_NOTES=[
  (1,'SQL y SQLite','SQL es el lenguaje para pedir información o definir estructuras, SQLite es el motor que interpreta esas instrucciones','pipeline','lenguaje motor consulta SELECT FROM'),
  (1,'Filas, columnas y valores','Una fila reúne datos de una persona, NOMBRE es una columna y Moshi es un valor de esa característica','table','tabla fila columna atributo entidad registro'),
  (2,'Tipos de origen','VARCHAR representa texto, NUMERIC números y DATE fechas, el taller adapta esos tipos al motor SQLite','types','tipo VARCHAR TEXT NUMERIC NUMBER INTEGER REAL DATE BLOB'),
- (2,'Precisión y escala','NUMERIC(10,2) tiene diez dígitos totales y dos decimales, para identificadores enteros usa escala 0','types','precision escala decimal numero'),
+ (2,'Precisión y escala','NUMERIC(10,2) permite hasta diez dígitos en total y hasta dos decimales, capacidad máxima no significa longitud exacta, NUMERIC(10,0) permite guardar 12 porque usa solo dos de hasta diez posiciones','types','precision escala decimal numero'),
  (2,'NULL no es cero','NULL representa un dato que todavía no conocemos, un atributo opcional lo permite y uno obligatorio no','table','NULL obligatorio opcional ausencia'),
  (3,'UID primario y clave primaria','El UID distingue cada instancia, en el relacional se convierte en PK, si tiene varias partes la combinación completa debe ser única','key','UID PK primaria identificador clave compuesta'),
- (3,'Convención de nombres','En el taller usamos singular y MAYÚSCULAS, sin espacios, tildes ni ñ, usa _ entre palabras, por ejemplo FECHA_NACIMIENTO','key','nombre singular mayusculas convencion atributos'),
+ (2,'Convención de nombres','Usamos entidades en singular y MAYÚSCULAS, como ESTUDIANTE, y atributos en minúsculas, como fecha_nacimiento, usa _ entre palabras y anio en lugar de año, es un estilo consistente y SQL admite otros','key','nombre singular mayusculas convencion atributos'),
  (4,'Relaciones 1:N','Una persona puede tener varias tutorías, la clave del lado uno pasa al lado muchos como FK, una tercera tabla normalmente no es necesaria','relation','relacion uno muchos foranea FK padre hijo'),
  (4,'Relaciones 1:1 y N:M','Una FK única representa 1:1, N:M necesita una tabla intermedia con las claves de ambos lados, cada fila representa una asociación','junction','cardinalidad muchos muchos uno uno intermedia UNIQUE'),
  (4,'Relación identificadora','La clave del padre forma parte de la clave primaria del hijo, no se copian todos sus atributos, ejemplo PEDIDO_ID y NUMERO_LINEA','relation','identificacion identificadora dependencia UID PK'),
@@ -50,6 +50,17 @@ class StudentNotebook:
         self.all_notes=[]
         for day,title,body,picture,keywords in FOUNDATION_NOTES:
             self.all_notes.append(dict(id='foundation_'+title,year=0,day=day,title=title,body=body,section='Modelo' if day>=3 else 'Bases',illustration=picture,keywords=keywords,is_sql=False))
+        from game.foundations_content import DAYS
+        from game.intro_voice_scripts import display_text
+        for day,lesson in DAYS.items():
+            for index,page in enumerate(lesson['pages']):
+                body=display_text(page['body'])
+                if page['columns']:
+                    body+='\n\n'+' | '.join(page['columns'])+'\n'+'\n'.join(' | '.join(str(value) for value in row) for row in page['rows'])
+                for part,text in enumerate(paginate_text(body,self.font_body,416,142,2)):
+                    self.all_notes.append(dict(id=f'intro_d{day}_p{index}_{part}',year=0,day=day,title=page['title'],body=text,section='Modelo' if day>=3 else 'Bases',is_sql=False))
+                if page['sql']:
+                    self.all_notes.append(dict(id=f'intro_d{day}_sql{index}',year=0,day=day,title=page['title']+' | SQL',body=page['sql'],section='Modelo' if day>=3 else 'Bases',is_sql=True))
         from game.lessons import demonstration
         for year in range(1,5):
             for day in range(1,5):
@@ -58,7 +69,7 @@ class StudentNotebook:
                     if item['columns']:
                         result+='\n'+'\n'.join(' | '.join('NULL' if v is None else str(v) for v in row) for row in item['rows'][:3])
                         if len(item['rows'])>3:result+=f"\nMuestra de 3 filas de {len(item['rows'])}"
-                    for label,body,is_sql in [('Concepto',item['explanation'],False),('Ejemplo SQL',item['sql'],True),('Resultado y consejo',result+'\n\n'+(item['error'] or item['check']),False)]:
+                    for label,body,is_sql in [('Explicación de Marco',item['speech'],False),('Concepto',item['explanation'],False),('Ejemplo SQL',item['sql'],True),('Resultado y consejo',result+'\n\n'+item['error']+'\n\n'+item['check'],False)]:
                         if not body.strip():continue
                         for text in paginate_text(body,self.font_body,416,142,2):
                             self.all_notes.append(dict(id=f'y{year}d{day}_{index}',year=year,day=day,title=item['title']+' | '+label,body=text,section=f'Año {year}',is_sql=is_sql))
@@ -187,7 +198,7 @@ class StudentNotebook:
                 note=notes[self.current_page]
                 draw_fitted_text(surface,note['title'],pygame.Rect(29,77,420,22),self.font_title,(35,55,75),padding=0)
                 if note.get('illustration'):
-                    render_wrapped_text(surface,note['body'],pygame.Rect(29,105,420,56),self.font_body,color=(35,55,65),padding=0,line_spacing=2)
+                    draw_fitted_text(surface,note['body'],pygame.Rect(29,105,420,72),self.font_body,(35,55,65),padding=0)
                     illustration(surface,note['illustration'],pygame.Rect(29,185,420,65),light=True)
                 elif note.get('is_sql'):draw_sql(surface,note['body'],(29,107),self.font_code,light=True)
                 else:render_wrapped_text(surface,note['body'],pygame.Rect(29,105,420,148),self.font_body,color=(35,55,65),padding=0,line_spacing=2)

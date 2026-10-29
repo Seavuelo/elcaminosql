@@ -33,16 +33,18 @@ def check_install(report_path):
             def exists(self):return False
 
         pygame.init();pygame.display.set_mode((480,300))
+        from pygame._sdl2.video import Window
+        Window.from_display_module().position=(0,0)
         config,save=MemoryConfig(),MemorySave()
         audio=AudioManager(config)
         if not audio.music_enabled or not audio.narrator:raise RuntimeError('No se pudo iniciar el audio')
         for context in ('menu','study','exam'):audio.set_music_context(context)
         report['checks'].append('Tres pistas de música cargadas')
-        if len(audio.narrator.entries)!=69:raise RuntimeError('El manifiesto de voz está incompleto')
+        if not audio.narrator.entries:raise RuntimeError('El manifiesto de voz está vacío')
         for entry in audio.narrator.entries.values():
             if pygame.mixer.Sound(str(audio.narrator.folder/entry['file'])).get_length()<=0:
                 raise RuntimeError('Audio de voz vacío')
-        report['checks'].append('69 fragmentos de voz decodificados')
+        report['checks'].append(f'{len(audio.narrator.entries)} fragmentos de voz decodificados')
         with tempfile.TemporaryDirectory() as folder:
             db=DatabaseManager(str(Path(folder)/'practice.db'));db.reset()
             result=db.execute_query('SELECT COUNT(*) FROM estudiantes;')
@@ -51,12 +53,43 @@ def check_install(report_path):
         canvas=Canvas((480,300))
         TitleScreen(audio,save,lambda:None,lambda:None,lambda:None,lambda:None).draw(canvas,1)
         room=FoundationsScene(save,audio);room.open(lambda:None,lambda:None)
+        from game.intro_voice_scripts import text_digest
+        covered=set()
+        def check_slides(slides):
+            for slide in slides:
+                identity=slide['narration_id']
+                entry=audio.narrator.entries.get(identity,{})
+                if text_digest(entry.get('display_text',''))!=text_digest(slide['turing']) or entry.get('narration_text')!=slide['narration_text']:
+                    raise RuntimeError(f'Falta la narración actualizada: {identity}')
+                covered.add(identity)
         for day in range(1,6):
             room.day=day;room.start_lecture()
+            check_slides(room.lecture.slides)
             room.lecture.draw(canvas)
             if not audio.narrator.channel.get_busy():raise RuntimeError(f'Falta la narración del día {day}')
+            room.mode='pc';room.draw(canvas)
+        from game.lecture import LectureScene
+        lecture=LectureScene(audio,save)
+        for year in range(1,5):
+            for day in range(1,6):
+                lecture.start_lecture(year,day,0,lambda:None)
+                check_slides(lecture.slides)
+                lecture.draw(canvas)
+        if covered!=set(audio.narrator.entries):raise RuntimeError('El manifiesto contiene clases desactualizadas')
         audio.stop_narration()
-        report['checks'].append('Menú y cinco clases renderizados con narración')
+        report['checks'].append('Menú, estación de estudio y 25 clases con narración actualizada')
+        from game.phone import StudentPhone
+        phone=StudentPhone(save,audio);phone.open();phone.update(.3)
+        for tab in ('match','plan','upgrades'):
+            phone.tab=tab;phone.draw(canvas)
+        phone.game.start_battle(3);phone.tab='match';phone.update(5);phone.draw(canvas)
+        cue=phone.game.state['battle']['windows'][-1]
+        phone.game.state['battle']['elapsed']=cue['at']+cue['windup']+cue['window']*.5
+        phone.draw(canvas)
+        if not phone.game.attempt_timing()['success']:raise RuntimeError('Falló el evento de precisión de Liga')
+        phone.update(100);phone.draw(canvas)
+        if phone.game.state['matches']!=1:raise RuntimeError('Liga no terminó la partida')
+        report['checks'].append('Liga: nueve dioses, preparación, combate, precisión y resultado')
         report['success']=True
     except Exception:
         report['error']=traceback.format_exc()

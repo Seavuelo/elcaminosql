@@ -9,15 +9,16 @@ GUIDES={
  'Personaje':[('Arriba / Abajo','Elegir un detalle'),('Izq / Der','Cambiar su aspecto'),('Enter','Editar nombre o confirmar'),('R','Girar el personaje')],
  'Aula':[('WASD / Flechas','Caminar'),('E / Enter / Espacio','Hablar o usar el computador'),('N','Cuaderno'),('F4 / P','Teléfono'),('M','Taller de modelamiento'),('C','Personalizar personaje'),('O / F2 / Esc','Ajustes'),('Q','Guardar y salir')],
  'Taller introductorio':[('WASD / Flechas','Caminar'),('E / Enter / Espacio / Clic','Hablar o usar el computador'),('N / F1','Cuaderno'),('M','Modelador desde el día 2'),('F4','Teléfono'),('O','Ajustes'),('Esc','Pausa, guardar u omitir taller')],
- 'Clase':[('Espacio / Enter / Der. / Clic','Completar pizarra o avanzar'),('Izq.','Volver a la diapositiva anterior'),('F7','Activar o desactivar la voz introductoria'),('F8','Repetir la voz introductoria'),('O','Ajustes en la clase introductoria'),('Esc','Salir de la explicación')],
+ 'Clase':[('Espacio / Enter / Der. / Clic','Completar pizarra o avanzar'),('Izq.','Volver a la diapositiva anterior'),('F7','Activar o desactivar la voz del profesor'),('F8','Repetir la voz del profesor'),('O','Ajustes durante la clase'),('Esc','Salir de la explicación')],
  'Conversación':[('Espacio / Enter / E / Esc','Continuar la conversación')],
  'SQL':[('Enter / Tab','Nueva línea / sangría'),('Ctrl+Enter / F5','Ejecutar o probar sin nota'),('Ctrl+Shift+Enter','Entregar respuesta del examen'),('F1 / F2 / F3 / F6','Apuntes / tablas / pistas / resultados'),('Flechas / Inicio / Fin','Mover el cursor, mantener para repetir'),('Ctrl+Izq / Der / Shift','Mover por palabras / seleccionar'),('Ctrl+A / C / X / V','Seleccionar / copiar / cortar / pegar'),('PgUp / PgDn','Historial de consultas'),('Esc','Salir del computador')],
  'Catálogo SQL':[('1–9 / Izq / Der','Cambiar de tabla'),('F2 / Enter / Espacio','Volver a la terminal'),('Esc','Salir del computador'),('F6','Resultado completo')],
  'Modelador':[('Rueda','Acercar o alejar'),('Arrastrar fondo','Desplazar el lienzo'),('Arrastrar entidad','Mover una entidad'),('Clic en entidad / relación','Abrir sus propiedades'),('Ctrl+Z','Deshacer'),('Esc','Cerrar propiedades o volver a sala')],
  'Kashut':[('1 / 2 / 3 / 4 / Clic','Responder'),('Enter','Continuar o revisar respuestas'),('R','Repetir desde el podio'),('Esc','Pausar o volver a la sala')],
  'Cuaderno':[('Izq / Der / Clic en < >','Cambiar de página'),('Ctrl+F','Buscar palabras'),('Enter','Escribir en Mis notas'),('Esc','Terminar de escribir o cerrar'),('N / F1','Cerrar el cuaderno')],
- 'Teléfono':[('1 / 2 / Tab','Partida o aumentos'),('Arriba / Abajo / Clic','Elegir aumento'),('Izq / Der / S','Cambiar dios / estrategia'),('Enter','Buscar partida o comprar aumento'),('Esc / P / F4','Cerrar el teléfono')],
+ 'Teléfono':[('1 / 2 / 3 / Tab','Dioses / aumentos / plan'),('Arriba / Abajo / Clic','Elegir aumento'),('Izq / Der / S / R','Dios / estrategia / reliquia'),('Enter','Buscar partida o comprar aumento'),('Clic en el círculo','Apuntar y conectar una jugada'),('Espacio / Enter','Alternativa de precisión con teclado'),('Esc / P / F4','Cerrar y seguir estudiando')],
  'Ajustes':[('Arriba / Abajo','Elegir ajuste'),('Izq / Der','Cambiar su valor'),('Enter / Espacio','Activar opción'),('Esc','Volver al juego')],
+ 'Misiones':[('Esc','Cerrar panel de misiones'),('Clic fuera','Cerrar panel')],
 }
 
 

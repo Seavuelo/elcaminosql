@@ -32,8 +32,11 @@ class GameTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.save_path = str(Path(self.temp.name) / "savegame.json")
+        self.config_path = str(Path(self.temp.name) / "config.json")
         self.patches = [patch("game.save_system.SAVE_DIR", self.temp.name),
-                        patch("game.save_system.SAVE_FILE", self.save_path)]
+                        patch("game.save_system.SAVE_FILE", self.save_path),
+                        patch("game.config.CONFIG_PATH", self.config_path),
+                        patch.dict('game.config.DEFAULT_CONFIG',{'creator_note_seen':True})]
         for item in self.patches:
             item.start()
             self.addCleanup(item.stop)
@@ -231,7 +234,7 @@ class GameTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 main.main()
         open_notes.assert_called_once()
-        self.assertTrue(SaveSystem().data["lecture_done_for_day"])
+        self.assertFalse(SaveSystem().data["lecture_done_for_day"])
         self.assertEqual(SaveSystem().data["skin_tone"], 1)
 
     def test_table_rendering_stays_inside_its_panel(self):
@@ -390,7 +393,7 @@ pygame.event.get = lambda: next(frames)
         root = Path(__file__).resolve().parents[1]
         env = dict(os.environ, PYTHONPATH=os.pathsep.join((self.temp.name, str(root))),
                    ELCAMINO_TEST_DIR=self.temp.name)
-        result = subprocess.run(["cmd", "/c", str(root / "Jugar.cmd")], cwd=self.temp.name,
+        result = subprocess.run(["cmd", "/c", str(root / "Jugar-Pygame.cmd")], cwd=self.temp.name,
                                 env=env, capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse((Path(self.temp.name) / "launcher_save.json").exists())
@@ -760,13 +763,14 @@ pygame.event.get = lambda: next(frames)
         phone.update(4)
         phone.draw(screen)
         phone.close()
-        phone.update(10)
+        phone.update(phone.game.state['battle']['duration'])
         self.assertEqual(phone.game.state["matches"], 1)
         self.assertEqual(SaveSystem().data["league"]["matches"], 1)
 
     def test_phone_global_button_and_shortcut_do_not_steal_sql_letters(self):
         import main
         from game.phone import StudentPhone
+        self.save.data["has_save"] = True
         self.save.data["lecture_done_for_day"] = True
         self.save.data["foundation"]["completed"] = True
         self.save.save()

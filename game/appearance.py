@@ -7,6 +7,6 @@ PANTS_COLORS = [("Mezclilla", (40,50,75)), ("Negro", (30,30,35)), ("Beige", (170
 SHOE_COLORS = [("Oscuro", (30,25,20)), ("Blanco", (230,235,240)), ("Rojo", (190,55,50)), ("Azul", (45,95,180)), ("Café", (115,75,45)), ("Violeta", (125,75,150))]
 BACKPACK_COLORS = [("Naranjo", (220,90,40)), ("Negro", (35,40,50)), ("Azul", (35,90,155)), ("Verde", (55,120,85)), ("Rosa", (210,115,155)), ("Crema", (210,195,155))]
 HAIR_STYLES = ["Corto", "Largo", "Despeinado", "Rapado", "Rizado"]
-CLOTHING_STYLES = ["Polera", "Polerón", "Chaqueta", "Rayas"]
+CLOTHING_STYLES = ["Polera", "Polerón", "Chaqueta", "Rayas", "Camisa", "Cárdigan", "Manga larga", "Polerón abierto"]
 SHOE_STYLES = ["Zapatillas", "Botines"]
 CUSTOM_FIELDS = ("skin_tone", "hair_color", "hair_style", "shirt_color", "eye_color", "pants_color", "shoe_color", "clothing_style", "shoe_style", "backpack_color")

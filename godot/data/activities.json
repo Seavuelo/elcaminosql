@@ -1,0 +1,277 @@
+{
+  "puzzles": [
+    {
+      "id": "filtro",
+      "lesson": "1_2",
+      "title": "El filtro humano",
+      "description": "Elige exactamente las filas que pasarían el filtro, pensar antes de ejecutar también es programar",
+      "sql": "SELECT nombre,nota FROM estudiante WHERE nota < 4;",
+      "rows": [
+        [
+          "Moshi",
+          6.8
+        ],
+        [
+          "Carlos",
+          3.9
+        ],
+        [
+          "Sofía",
+          4
+        ],
+        [
+          "Matías",
+          null
+        ],
+        [
+          "Valentina",
+          2.5
+        ]
+      ],
+      "correct": [
+        1,
+        4
+      ],
+      "explanation": "3,9 y 2,5 son menores que cuatro, el cuatro queda fuera y NULL no representa una nota que podamos comparar"
+    },
+    {
+      "id": "orden",
+      "lesson": "1_3",
+      "title": "Ordena el podio",
+      "description": "Usa las flechas para dejar las filas en el orden de la consulta",
+      "sql": "SELECT id,nombre,nota FROM estudiante ORDER BY nota DESC,id ASC;",
+      "rows": [
+        [
+          4,
+          "Moshi",
+          6.8
+        ],
+        [
+          2,
+          "Sofía",
+          6.8
+        ],
+        [
+          1,
+          "Carlos",
+          3.9
+        ],
+        [
+          3,
+          "Matías",
+          5.2
+        ]
+      ],
+      "correct": [
+        1,
+        0,
+        3,
+        2
+      ],
+      "explanation": "Primero va la nota más alta, ante el empate entre Sofía y Moshi manda el ID más pequeño"
+    },
+    {
+      "id": "claves",
+      "lesson": "0_4",
+      "title": "Encuentra a quién pertenece",
+      "description": "Relaciona cada tutoría con la identidad de su estudiante, dos personas pueden tener el mismo nombre",
+      "sql": "tutoria.estudiante_id → estudiante.id",
+      "parents": [
+        [
+          7,
+          "Carlos"
+        ],
+        [
+          12,
+          "Carlos"
+        ],
+        [
+          3,
+          "Moshi"
+        ]
+      ],
+      "rows": [
+        [
+          101,
+          12,
+          "Filtros"
+        ],
+        [
+          102,
+          3,
+          "Claves"
+        ],
+        [
+          103,
+          7,
+          "Tablas"
+        ]
+      ],
+      "correct": [
+        1,
+        2,
+        0
+      ],
+      "explanation": "La tutoría guarda el ID del estudiante, el nombre sirve para leer el dato pero no distingue a los dos Carlos"
+    },
+    {
+      "id": "prediccion",
+      "kind": "choice",
+      "lesson": "3_1",
+      "title": "Antes de ejecutar",
+      "description": "En prestamo hay cuatro filas, sus valores de devuelto son 1, 0, NULL y 1, predice el resultado antes de pedirle ayuda al computador",
+      "sql": "SELECT COUNT(*) AS total,\n       COUNT(devuelto) AS registrados,\n       SUM(devuelto) AS devueltos\nFROM prestamo;",
+      "rows": [
+        [
+          "total 4  /  registrados 4  /  devueltos 2"
+        ],
+        [
+          "total 3  /  registrados 3  /  devueltos 2"
+        ],
+        [
+          "total 4  /  registrados 3  /  devueltos 2"
+        ],
+        [
+          "total 4  /  registrados 2  /  devueltos 2"
+        ]
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "COUNT(*) cuenta las cuatro filas, COUNT(devuelto) omite el NULL y cuenta tres valores registrados, SUM suma 1 + 0 + 1 y devuelve dos, el cero existe y también se cuenta como un valor registrado"
+    },
+    {
+      "id": "depuracion",
+      "kind": "choice",
+      "lesson": "3_4",
+      "title": "El JOIN que se comió una fila",
+      "description": "Moshi tiene una tutoría pendiente, Carlos tiene una completada y Sofía no tiene tutorías, queremos ver a los tres y mostrar solamente las tutorías pendientes, la consulta actual hace desaparecer a Carlos y Sofía",
+      "sql": "SELECT e.nombre,t.tema\nFROM estudiante e\nLEFT JOIN tutoria t ON t.estudiante_id=e.id\nWHERE t.completada=0;",
+      "rows": [
+        [
+          "Cambiar LEFT JOIN por INNER JOIN"
+        ],
+        [
+          "Mover t.completada=0 al ON junto a la condición de identidad"
+        ],
+        [
+          "Agregar OR t.completada IS NULL al WHERE"
+        ],
+        [
+          "Usar DISTINCT para recuperar a los estudiantes que faltan"
+        ]
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "El ON decide qué tutorías se pueden unir, al poner ahí completada=0, el LEFT JOIN conserva a todos los estudiantes, Carlos y Sofía quedan con datos de tutoría NULL, agregar IS NULL al WHERE no recupera a Carlos porque sí tenía una coincidencia completada"
+    }
+  ],
+  "investigations": [
+    {
+      "id": "reservas",
+      "lesson": "2_1",
+      "title": "La reserva que parecía perdida",
+      "subtitle": "Un caso del equipo de apoyo de la facultad",
+      "docs": [
+        {
+          "id": "correo",
+          "title": "Solicitud de secretaría",
+          "body": "Dos estudiantes llamados Carlos reservaron salas distintas, al revisar una de las reservas la aplicación muestra la del otro\n\nNo vamos a borrar registros ni cambiar nombres, necesitamos encontrar cómo identifica cada reserva el sistema"
+        },
+        {
+          "id": "registro",
+          "title": "Registro de estudiantes y reservas",
+          "body": "Los nombres pueden coincidir, cada estudiante conserva su propio ID, una reserva tiene además un ID propio y una referencia a su estudiante",
+          "columns": [
+            "estudiante_id",
+            "nombre",
+            "reserva_id",
+            "sala"
+          ],
+          "rows": [
+            [
+              7,
+              "Carlos",
+              31,
+              "Norte"
+            ],
+            [
+              12,
+              "Carlos",
+              32,
+              "Sur"
+            ]
+          ]
+        },
+        {
+          "id": "consulta",
+          "title": "Fragmento de la búsqueda antigua",
+          "body": "La pantalla recibe el nombre escrito y toma la primera coincidencia, pero lo que necesitamos recuperar es la reserva del estudiante con ID 12\n\nEl filtro debe usar la referencia estable, no asumir que los nombres son únicos",
+          "code": "SELECT id,sala FROM reserva WHERE estudiante_nombre='Carlos' LIMIT 1;"
+        }
+      ],
+      "options": [
+        "Eliminar al estudiante cuyo nombre se repite",
+        "Buscar la reserva por estudiante_id y conservar ambos estudiantes",
+        "Ordenar los nombres antes de escoger el primero"
+      ],
+      "answer": 1,
+      "feedback": "El problema está en la identidad usada por la búsqueda, dos estudiantes distintos pueden compartir nombre sin que ninguno de sus registros esté mal",
+      "case_id": "investigar_reservas"
+    },
+    {
+      "id": "totales",
+      "lesson": "4_2",
+      "title": "Los totales no cuadran",
+      "subtitle": "Investiga cómo cambia una fila al unir dos relaciones de uno a muchos",
+      "source": "https://www.postgresql.org/message-id/86b9ec78-925c-1935-bc9d-6bad4ceb1f40@illuminatedcomputing.com",
+      "docs": [
+        {
+          "id": "ticket",
+          "title": "El reporte de inventario",
+          "body": "El informe cruza productos, ventas y compras, una venta aparece repetida cuando el producto tiene dos compras\n\nLa suma no sabe que esas filas representan la misma venta, suma lo que recibe después del cruce"
+        },
+        {
+          "id": "detalle",
+          "title": "Sigue una venta a través del cruce",
+          "body": "Esta venta de dos unidades coincide con dos compras del mismo producto, el resultado contiene dos filas, sumarla aquí daría cuatro unidades vendidas aunque solo se vendieron dos",
+          "columns": [
+            "producto_id",
+            "venta_id",
+            "vendidas",
+            "compra_id"
+          ],
+          "rows": [
+            [
+              1,
+              10,
+              2,
+              81
+            ],
+            [
+              1,
+              10,
+              2,
+              82
+            ]
+          ]
+        },
+        {
+          "id": "criterio",
+          "title": "Define qué significa una fila",
+          "body": "Cada total debe representar un producto, calcula ventas y compras por separado antes de reunir sus resultados\n\nOtra forma es una subconsulta por cada total, la subconsulta usa el ID del producto de la fila exterior para sumar solo sus movimientos\n\nCOALESCE(valor, 0) muestra cero cuando la suma no tiene movimientos y devuelve NULL",
+          "code": "SELECT p.id,\n  COALESCE(\n    (SELECT SUM(v.cantidad) FROM venta v\n     WHERE v.producto_id=p.id),\n    0\n  ) AS vendidas\nFROM producto p;"
+        }
+      ],
+      "options": [
+        "Sumar todas las filas del cruce y después dividir por dos",
+        "Calcular cada total al nivel del producto y después reunirlos",
+        "Usar DISTINCT en la cantidad de cada venta aunque dos ventas reales tengan el mismo importe"
+      ],
+      "answer": 1,
+      "feedback": "La multiplicación de coincidencias cambia el nivel del resultado, agregar cada movimiento por separado evita contar una venta más de una vez",
+      "case_id": "investigar_totales"
+    }
+  ]
+}

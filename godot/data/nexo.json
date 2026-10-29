@@ -1,0 +1,633 @@
+{
+  "posts": [
+    {
+      "id": "caja_negativa",
+      "author": "carlos",
+      "lesson": "0_2",
+      "title": "El almacén vendió menos de cero",
+      "text": "Estoy ordenando el almacén de mi mamá, el campo cantidad acepta números y también me dejó guardar -4 panes, ¿elegí mal el tipo o falta algo?",
+      "options": [
+        [
+          "Cambiar a un entero y dejarlo así",
+          0,
+          "Un entero también puede ser negativo, el tipo por sí solo no expresa qué cantidades acepta el negocio"
+        ],
+        [
+          "Definir que la cantidad no puede bajar de cero y validar esa regla",
+          3,
+          "El tipo permite representar un número, una regla del negocio decide qué números tienen sentido, más adelante CHECK permitirá rechazar cantidades negativas"
+        ],
+        [
+          "Guardar las cantidades como texto para evitar el signo menos",
+          -1,
+          "El texto también puede contener -4 y dificulta las operaciones, cambiar de tipo no resuelve la regla"
+        ],
+        [
+          "Borrar los negativos cada noche",
+          0,
+          "Eso corrige algunos datos tarde, conviene prevenir la entrada y revisar por qué se generaron"
+        ]
+      ]
+    },
+    {
+      "id": "juegos_identidad",
+      "author": "sofia",
+      "lesson": "0_3",
+      "title": "Dos juegos se llaman igual",
+      "text": "En mi biblioteca hay dos juegos con el mismo nombre, estaba usando nombre para distinguirlos y ahora mezclo sus horas jugadas, ¿cómo los separo?",
+      "options": [
+        [
+          "Usar un ID único para cada juego y conservar el nombre como descripción",
+          3,
+          "El ID identifica la fila aunque dos nombres coincidan o un título cambie, las horas deben asociarse con ese ID"
+        ],
+        [
+          "Añadir el nombre del desarrollador y confiar en que nunca se repetirá",
+          0,
+          "Podría ayudar a distinguir visualmente, pero no garantiza unicidad ni que esos datos no cambien"
+        ],
+        [
+          "Cambiarle el nombre a uno para que no choque",
+          -1,
+          "Modificar el dato para esconder el choque no crea una identidad estable"
+        ],
+        [
+          "Marcar el nombre como obligatorio",
+          0,
+          "Obligatorio evita NULL, pero permite que dos filas tengan el mismo nombre"
+        ]
+      ]
+    },
+    {
+      "id": "codigos_inicio",
+      "author": "moshi",
+      "lesson": "0_2",
+      "title": "Mi código se comió un cero",
+      "text": "Mi código de estudiante era 00124 y quedó como 124, ahora parece contraseña de maleta, ¿lo guardamos como número o como texto?",
+      "options": [
+        [
+          "Como texto, es un identificador y esos ceros importan",
+          3,
+          "No vamos a sumar códigos de estudiantes, TEXT o VARCHAR conserva los ceros iniciales y otros caracteres permitidos"
+        ],
+        [
+          "Como número y mostrar siempre cinco dígitos en cualquier caso",
+          1,
+          "Dar formato sirve si la longitud siempre es fija, conservar el código como texto evita depender de esa suposición"
+        ],
+        [
+          "Como REAL para que entren más cifras",
+          -1,
+          "REAL representa cantidades con decimales y no conserva los ceros iniciales de un código"
+        ],
+        [
+          "Como DATE porque aparece en la matrícula",
+          -1,
+          "Que un dato aparezca en la matrícula no lo convierte en una fecha"
+        ]
+      ]
+    },
+    {
+      "id": "tutoria_origen",
+      "author": "matias",
+      "lesson": "0_4",
+      "title": "Una tutoría que nadie pidió",
+      "text": "La tutoría dice que pertenece al estudiante 99, pero no existe ese estudiante, quería aprender claves y terminé invocando gente, ¿qué me faltó?",
+      "options": [
+        [
+          "Una FK que apunte al ID de ESTUDIANTE y que esté activada su comprobación",
+          3,
+          "La FK obliga a que la referencia corresponda a una fila existente, en SQLite hay que habilitar la comprobación de claves foráneas"
+        ],
+        [
+          "Poner estudiante_id como número",
+          0,
+          "Eso permite guardar 99, pero no prueba que haya un estudiante con ese ID"
+        ],
+        [
+          "Repetir el nombre del estudiante dentro de cada tutoría",
+          -1,
+          "Repetir el nombre puede crear más inconsistencias y no valida la existencia del estudiante"
+        ],
+        [
+          "Hacer único el ID de cada tutoría",
+          1,
+          "Cada tutoría necesita su identidad, pero eso no comprueba a quién pertenece"
+        ]
+      ]
+    },
+    {
+      "id": "nota_limite",
+      "author": "carlos",
+      "lesson": "1_2",
+      "title": "El cuatro se coló en la lista",
+      "text": "Quiero ver quién tiene nota menor a 4, usé nota <= 4 y salió alguien con un cuatro justo, ¿me faltó rezar o cambiar el filtro?",
+      "options": [
+        [
+          "Usar nota < 4 porque el cuatro no es menor que sí mismo",
+          3,
+          "< deja fuera el límite, <= lo incluye, prueba con 3,9, 4 y 4,1 para comprobar ambos lados"
+        ],
+        [
+          "Usar nota > 4",
+          -1,
+          "Eso muestra notas mayores, cambia el sentido de lo que estamos buscando"
+        ],
+        [
+          "Ordenar las notas y eliminar la última fila",
+          0,
+          "Ordenar no decide qué filas cumplen la condición, además puede haber varios cuatros"
+        ],
+        [
+          "Dejar <= 4 porque está cerca del límite",
+          -1,
+          "Una regla precisa no depende de qué tan cerca esté la nota, incluir el cuatro cambia el resultado"
+        ]
+      ]
+    },
+    {
+      "id": "update_seguro",
+      "author": "moshi",
+      "lesson": "2_3",
+      "title": "Una oferta demasiado generosa",
+      "text": "Le bajé el precio a un producto y quedaron todos en oferta, buena noticia para comprar, pésima para el almacén, ¿qué revisarías antes del próximo UPDATE?",
+      "options": [
+        [
+          "Probar un SELECT con el mismo WHERE y confirmar qué filas va a afectar",
+          3,
+          "Ver primero las filas del filtro permite comprobar su alcance, luego puedes aplicar el UPDATE usando ese criterio"
+        ],
+        [
+          "Añadir LIMIT 1 y confiar en que elegirá el producto correcto",
+          -1,
+          "Limitar una cantidad no identifica por sí solo el producto y esa sintaxis tampoco está disponible en todas las configuraciones"
+        ],
+        [
+          "Usar el ID correcto en WHERE y probar el cambio en una copia",
+          2,
+          "La identidad estable y una copia de práctica reducen errores, revisar antes las filas afectadas aporta otra comprobación"
+        ],
+        [
+          "Ejecutarlo otra vez con el precio antiguo",
+          0,
+          "Podrías reemplazar precios que originalmente eran distintos, primero hay que conocer el estado anterior"
+        ]
+      ]
+    },
+    {
+      "id": "promedio_nulos",
+      "author": "sofia",
+      "lesson": "3_1",
+      "title": "La nota pendiente no es un cero",
+      "text": "Una persona todavía no rinde la evaluación y tiene NULL, si quiero calcular el promedio de las notas que sí existen, ¿qué pasa con esa fila?",
+      "options": [
+        [
+          "AVG ignora ese NULL, no lo convierte automáticamente en cero",
+          3,
+          "NULL representa una ausencia de valor, AVG usa los valores no nulos, reemplazarlo por cero cambiaría el significado del promedio"
+        ],
+        [
+          "AVG siempre divide por todas las filas aunque la nota sea NULL",
+          -1,
+          "AVG no incluye los valores NULL en su denominador"
+        ],
+        [
+          "Cambiar NULL por cero para que no falte nadie",
+          0,
+          "Eso sería otra regla y bajaría el promedio, solo corresponde si el negocio define realmente esa nota como cero"
+        ],
+        [
+          "Borrar a la persona mientras no tenga nota",
+          -1,
+          "La ausencia temporal de una nota no justifica borrar a la persona ni sus otros datos"
+        ]
+      ]
+    },
+    {
+      "id": "join_duplicados",
+      "author": "moshi",
+      "lesson": "3_4",
+      "title": "El JOIN me clonó a Carlos",
+      "text": "Cada estudiante puede tener varias tutorías, junté las tablas y Carlos aparece tres veces, todavía no domina una vida y ya tiene tres, ¿el JOIN está malo?",
+      "options": [
+        [
+          "Puede estar bien, sale una fila por cada tutoría que coincide con Carlos",
+          3,
+          "Una relación de uno a muchos produce varias coincidencias, para contar estudiantes debes distinguir sus ID o agregar antes según la pregunta"
+        ],
+        [
+          "Sí, un JOIN siempre debe devolver una fila por estudiante",
+          -1,
+          "El número de filas depende de las coincidencias entre las tablas"
+        ],
+        [
+          "Poner DISTINCT en todas las consultas sin revisar sus columnas",
+          0,
+          "DISTINCT elimina filas completas iguales, no arregla una pregunta mal definida ni necesariamente un total duplicado"
+        ],
+        [
+          "Revisar qué representa una fila del resultado antes de calcular totales",
+          2,
+          "Definir el nivel del resultado ayuda a detectar si estás contando estudiantes, tutorías o sus combinaciones"
+        ]
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "almacen_1",
+      "author": "carlos",
+      "project": "almacen",
+      "stage": 1,
+      "lesson": "1_2",
+      "title": "El primer inventario",
+      "text": "Mi mamá tiene el almacén más ordenado que mis carpetas, quiero ver qué falta antes de que me rete",
+      "objective": "Devuelve nombre y stock de producto cuando stock sea menor que 5, incluye cero y deja fuera cinco",
+      "sql": "SELECT nombre, stock FROM producto WHERE stock < 5;",
+      "is_write": false,
+      "previous": "",
+      "xp": 200,
+      "money": 8,
+      "reputation": 3,
+      "hints": [
+        "El filtro compara cada stock con el límite, no decidas por la posición ni por el nombre del producto",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT nombre, stock FROM producto WHERE stock < 5;\n\nEl filtro compara cada stock con el límite, no decidas por la posición ni por el nombre del producto"
+      ],
+      "fixtures": [
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Arroz',12),(2,'Leche',3),(3,'Pan',0),(4,'Té',5);\nINSERT INTO venta VALUES (1,1,2),(2,1,3),(3,2,1);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Pan',5),(2,'Leche',4),(3,'Pan',2),(4,'Sal',0);\nINSERT INTO venta VALUES (1,2,2),(2,3,1),(3,3,4);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Café',0),(2,'Leche',5),(3,'Agua',6),(4,'Té',4);\n"
+      ]
+    },
+    {
+      "id": "almacen_2",
+      "author": "carlos",
+      "project": "almacen",
+      "stage": 2,
+      "lesson": "2_3",
+      "title": "Llegó una reposición",
+      "text": "Ya ocupamos tu listado para comprar, ahora llegaron ocho unidades del producto con ID 2, no eran ocho para todo el almacén, menos mal pregunté",
+      "objective": "Suma 8 al stock actual de producto con id 2 y conserva las otras filas",
+      "sql": "UPDATE producto SET stock = stock + 8 WHERE id = 2;",
+      "is_write": true,
+      "previous": "almacen_1",
+      "xp": 250,
+      "money": 11,
+      "reputation": 4,
+      "hints": [
+        "Actualizar una cantidad relativa necesita partir de su valor actual, el ID limita el cambio a una fila",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nUPDATE producto SET stock = stock + 8 WHERE id = 2;\n\nActualizar una cantidad relativa necesita partir de su valor actual, el ID limita el cambio a una fila"
+      ],
+      "fixtures": [
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Arroz',12),(2,'Leche',3),(3,'Pan',0),(4,'Té',5);\nINSERT INTO venta VALUES (1,1,2),(2,1,3),(3,2,1);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Pan',5),(2,'Leche',4),(3,'Pan',2),(4,'Sal',0);\nINSERT INTO venta VALUES (1,2,2),(2,3,1),(3,3,4);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Café',0),(2,'Leche',5),(3,'Agua',6),(4,'Té',4);\n"
+      ]
+    },
+    {
+      "id": "almacen_3",
+      "author": "carlos",
+      "project": "almacen",
+      "stage": 3,
+      "lesson": "3_4",
+      "title": "Qué se está vendiendo",
+      "text": "Mi mamá preguntó qué sale más, yo dije que yo cuando hay que descargar cajas, no se rió",
+      "objective": "Devuelve id, nombre y SUM(cantidad) AS unidades por producto que tenga ventas, agrupa por su identidad, nombres iguales pueden corresponder a productos distintos",
+      "sql": "SELECT p.id, p.nombre, SUM(v.cantidad) AS unidades FROM producto p JOIN venta v ON v.producto_id=p.id GROUP BY p.id,p.nombre;",
+      "is_write": false,
+      "previous": "almacen_2",
+      "xp": 300,
+      "money": 14,
+      "reputation": 5,
+      "hints": [
+        "Une por ID y agrupa por ID y nombre, cada fila de venta aporta su cantidad una sola vez",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT p.id, p.nombre, SUM(v.cantidad) AS unidades FROM producto p JOIN venta v ON v.producto_id=p.id GROUP BY p.id,p.nombre;\n\nUne por ID y agrupa por ID y nombre, cada fila de venta aporta su cantidad una sola vez"
+      ],
+      "fixtures": [
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Arroz',12),(2,'Leche',3),(3,'Pan',0),(4,'Té',5);\nINSERT INTO venta VALUES (1,1,2),(2,1,3),(3,2,1);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Pan',5),(2,'Leche',4),(3,'Pan',2),(4,'Sal',0);\nINSERT INTO venta VALUES (1,2,2),(2,3,1),(3,3,4);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Café',0),(2,'Leche',5),(3,'Agua',6),(4,'Té',4);\n"
+      ]
+    },
+    {
+      "id": "almacen_4",
+      "author": "carlos",
+      "project": "almacen",
+      "stage": 4,
+      "lesson": "4_2",
+      "title": "Productos sin movimiento",
+      "text": "El almacén creció y hay cosas que llevan meses mirándome, quiero saber cuáles nunca vendimos antes de pedir más",
+      "objective": "Devuelve p.id y p.nombre de productos sin ninguna venta, conserva los productos aunque no tengan coincidencia",
+      "sql": "SELECT p.id,p.nombre FROM producto p LEFT JOIN venta v ON v.producto_id=p.id WHERE v.id IS NULL;",
+      "is_write": false,
+      "previous": "almacen_3",
+      "xp": 350,
+      "money": 17,
+      "reputation": 6,
+      "hints": [
+        "LEFT JOIN conserva todos los productos, una clave de venta NULL indica que no hubo coincidencia",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT p.id,p.nombre FROM producto p LEFT JOIN venta v ON v.producto_id=p.id WHERE v.id IS NULL;\n\nLEFT JOIN conserva todos los productos, una clave de venta NULL indica que no hubo coincidencia"
+      ],
+      "fixtures": [
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Arroz',12),(2,'Leche',3),(3,'Pan',0),(4,'Té',5);\nINSERT INTO venta VALUES (1,1,2),(2,1,3),(3,2,1);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Pan',5),(2,'Leche',4),(3,'Pan',2),(4,'Sal',0);\nINSERT INTO venta VALUES (1,2,2),(2,3,1),(3,3,4);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,stock INTEGER NOT NULL CHECK(stock>=0)); CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER REFERENCES producto(id),cantidad INTEGER NOT NULL);\nINSERT INTO producto VALUES (1,'Café',0),(2,'Leche',5),(3,'Agua',6),(4,'Té',4);\n"
+      ]
+    },
+    {
+      "id": "tutorias_1",
+      "author": "moshi",
+      "project": "tutorias",
+      "stage": 1,
+      "lesson": "1_4",
+      "title": "Un ranking que no pelee por el empate",
+      "text": "Estoy armando la lista de notas para las tutorías, si empatamos que mande el ID, bastante competencia tengo con despertarme",
+      "objective": "Devuelve id, nombre y nota de los tres primeros estudiantes, ordena nota descendente y ante empates id ascendente",
+      "sql": "SELECT id,nombre,nota FROM estudiante ORDER BY nota DESC,id ASC LIMIT 3;",
+      "is_write": false,
+      "previous": "",
+      "xp": 200,
+      "money": 8,
+      "reputation": 3,
+      "hints": [
+        "Un criterio de desempate hace el resultado estable, LIMIT se aplica después de ordenar",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT id,nombre,nota FROM estudiante ORDER BY nota DESC,id ASC LIMIT 3;\n\nUn criterio de desempate hace el resultado estable, LIMIT se aplica después de ordenar"
+      ],
+      "fixtures": [
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6.8),(2,'Carlos',3.9),(3,'Sofía',6.8),(4,'Matías',NULL);\nINSERT INTO tutoria VALUES (1,1,'Claves'),(2,1,'Tipos'),(3,2,'Filtros');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',7),(2,'Carlos',5),(3,'Carlos',4),(4,'Sofía',NULL);\nINSERT INTO tutoria VALUES (1,2,'Claves'),(2,2,'Filtros'),(3,2,'Tipos'),(4,3,'Orden');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6),(2,'Carlos',6),(3,'Sofía',6),(4,'Matías',3);\n"
+      ]
+    },
+    {
+      "id": "tutorias_2",
+      "author": "moshi",
+      "project": "tutorias",
+      "stage": 2,
+      "lesson": "2_2",
+      "title": "Una nota pendiente",
+      "text": "Se sumó Ana a las tutorías y todavía no da la prueba, ponerle un cero sería inventarle una tragedia",
+      "objective": "Inserta estudiante id 5, nombre Ana y nota NULL, conserva los estudiantes existentes",
+      "sql": "INSERT INTO estudiante(id,nombre,nota) VALUES(5,'Ana',NULL);",
+      "is_write": true,
+      "previous": "tutorias_1",
+      "xp": 250,
+      "money": 11,
+      "reputation": 4,
+      "hints": [
+        "Una nota pendiente es ausencia de valor, NULL no lleva comillas y no significa cero",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nINSERT INTO estudiante(id,nombre,nota) VALUES(5,'Ana',NULL);\n\nUna nota pendiente es ausencia de valor, NULL no lleva comillas y no significa cero"
+      ],
+      "fixtures": [
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6.8),(2,'Carlos',3.9),(3,'Sofía',6.8),(4,'Matías',NULL);\nINSERT INTO tutoria VALUES (1,1,'Claves'),(2,1,'Tipos'),(3,2,'Filtros');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',7),(2,'Carlos',5),(3,'Carlos',4),(4,'Sofía',NULL);\nINSERT INTO tutoria VALUES (1,2,'Claves'),(2,2,'Filtros'),(3,2,'Tipos'),(4,3,'Orden');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6),(2,'Carlos',6),(3,'Sofía',6),(4,'Matías',3);\n"
+      ]
+    },
+    {
+      "id": "tutorias_3",
+      "author": "moshi",
+      "project": "tutorias",
+      "stage": 3,
+      "lesson": "3_3",
+      "title": "Quién necesita más apoyo",
+      "text": "Quiero ubicar a quienes ya tienen dos o más tutorías, en mi caso serían dos tutorías y un completo, pero ese último no lo contamos",
+      "objective": "Devuelve estudiante_id y COUNT(*) AS sesiones para estudiantes con dos o más tutorías",
+      "sql": "SELECT estudiante_id,COUNT(*) AS sesiones FROM tutoria GROUP BY estudiante_id HAVING COUNT(*) >= 2;",
+      "is_write": false,
+      "previous": "tutorias_2",
+      "xp": 300,
+      "money": 14,
+      "reputation": 5,
+      "hints": [
+        "WHERE filtra filas antes de agrupar, HAVING permite filtrar por la cantidad de filas de cada grupo",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT estudiante_id,COUNT(*) AS sesiones FROM tutoria GROUP BY estudiante_id HAVING COUNT(*) >= 2;\n\nWHERE filtra filas antes de agrupar, HAVING permite filtrar por la cantidad de filas de cada grupo"
+      ],
+      "fixtures": [
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6.8),(2,'Carlos',3.9),(3,'Sofía',6.8),(4,'Matías',NULL);\nINSERT INTO tutoria VALUES (1,1,'Claves'),(2,1,'Tipos'),(3,2,'Filtros');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',7),(2,'Carlos',5),(3,'Carlos',4),(4,'Sofía',NULL);\nINSERT INTO tutoria VALUES (1,2,'Claves'),(2,2,'Filtros'),(3,2,'Tipos'),(4,3,'Orden');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6),(2,'Carlos',6),(3,'Sofía',6),(4,'Matías',3);\n"
+      ]
+    },
+    {
+      "id": "tutorias_4",
+      "author": "moshi",
+      "project": "tutorias",
+      "stage": 4,
+      "lesson": "4_3",
+      "title": "Una agenda para compartir",
+      "text": "Ya nos piden la agenda todas las semanas, dejémosla lista como vista, la parte de hacer tutorías sola todavía no la invento",
+      "objective": "Crea una vista agenda_tutoria con t.id AS tutoria_id, e.nombre y t.tema, cruza por estudiante_id con estudiante.id",
+      "sql": "CREATE VIEW agenda_tutoria AS SELECT t.id AS tutoria_id,e.nombre,t.tema FROM tutoria t JOIN estudiante e ON e.id=t.estudiante_id;",
+      "is_write": true,
+      "previous": "tutorias_3",
+      "xp": 350,
+      "money": 17,
+      "reputation": 6,
+      "hints": [
+        "Una vista guarda una consulta para reutilizarla, no necesita copiar las filas de sus tablas",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nCREATE VIEW agenda_tutoria AS SELECT t.id AS tutoria_id,e.nombre,t.tema FROM tutoria t JOIN estudiante e ON e.id=t.estudiante_id;\n\nUna vista guarda una consulta para reutilizarla, no necesita copiar las filas de sus tablas"
+      ],
+      "fixtures": [
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6.8),(2,'Carlos',3.9),(3,'Sofía',6.8),(4,'Matías',NULL);\nINSERT INTO tutoria VALUES (1,1,'Claves'),(2,1,'Tipos'),(3,2,'Filtros');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',7),(2,'Carlos',5),(3,'Carlos',4),(4,'Sofía',NULL);\nINSERT INTO tutoria VALUES (1,2,'Claves'),(2,2,'Filtros'),(3,2,'Tipos'),(4,3,'Orden');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6),(2,'Carlos',6),(3,'Sofía',6),(4,'Matías',3);\n"
+      ]
+    },
+    {
+      "id": "biblioteca_1",
+      "author": "sofia",
+      "project": "biblioteca",
+      "stage": 1,
+      "lesson": "1_1",
+      "title": "Una biblioteca sin abrir diez ventanas",
+      "text": "Quiero mirar mis juegos sin abrir el cliente y terminar jugando tres horas, el riesgo igual existe",
+      "objective": "Devuelve nombre, genero y horas de todos los juegos",
+      "sql": "SELECT nombre,genero,horas FROM juego;",
+      "is_write": false,
+      "previous": "",
+      "xp": 200,
+      "money": 8,
+      "reputation": 3,
+      "hints": [
+        "SELECT elige las columnas que necesitas, FROM indica la tabla donde están",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT nombre,genero,horas FROM juego;\n\nSELECT elige las columnas que necesitas, FROM indica la tabla donde están"
+      ],
+      "fixtures": [
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Bosque','Terror',10,'activo'),(2,'Carrera','Deportes',20,'activo'),(3,'Bosque','Terror',0,'cancelado'),(4,'Luna','Aventura',NULL,'activo');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Luna','Terror',30,'activo'),(2,'Bosque','Terror',10,'activo'),(3,'Carrera','Deportes',10,'cancelado'),(4,'Dunas','Aventura',10,'cancelado');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Amanecer','Terror',NULL,'activo'),(2,'Ruedas','Deportes',0,'activo'),(3,'Huellas','Terror',0,'activo');"
+      ]
+    },
+    {
+      "id": "biblioteca_2",
+      "author": "sofia",
+      "project": "biblioteca",
+      "stage": 2,
+      "lesson": "2_4",
+      "title": "Limpiar la lista local",
+      "text": "Esta es mi copia local para organizarme, quiero sacar los registros cancelados y dejar tranquilos los demás",
+      "objective": "Elimina de juego solo las filas cuyo estado sea cancelado",
+      "sql": "DELETE FROM juego WHERE estado='cancelado';",
+      "is_write": true,
+      "previous": "biblioteca_1",
+      "xp": 250,
+      "money": 11,
+      "reputation": 4,
+      "hints": [
+        "Antes de borrar, un SELECT con el mismo WHERE permite comprobar qué filas se eliminarán",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nDELETE FROM juego WHERE estado='cancelado';\n\nAntes de borrar, un SELECT con el mismo WHERE permite comprobar qué filas se eliminarán"
+      ],
+      "fixtures": [
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Bosque','Terror',10,'activo'),(2,'Carrera','Deportes',20,'activo'),(3,'Bosque','Terror',0,'cancelado'),(4,'Luna','Aventura',NULL,'activo');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Luna','Terror',30,'activo'),(2,'Bosque','Terror',10,'activo'),(3,'Carrera','Deportes',10,'cancelado'),(4,'Dunas','Aventura',10,'cancelado');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Amanecer','Terror',NULL,'activo'),(2,'Ruedas','Deportes',0,'activo'),(3,'Huellas','Terror',0,'activo');"
+      ]
+    },
+    {
+      "id": "biblioteca_3",
+      "author": "sofia",
+      "project": "biblioteca",
+      "stage": 3,
+      "lesson": "3_2",
+      "title": "Las horas por género",
+      "text": "Según yo juego de todo, veamos si los datos me dejan mentir tan tranquila",
+      "objective": "Devuelve genero y AVG(horas) AS promedio_horas por género, incluye los géneros cuyas horas sean todas NULL",
+      "sql": "SELECT genero,AVG(horas) AS promedio_horas FROM juego GROUP BY genero;",
+      "is_write": false,
+      "previous": "biblioteca_2",
+      "xp": 300,
+      "money": 14,
+      "reputation": 5,
+      "hints": [
+        "AVG considera las horas conocidas de cada grupo, si no hay ningún valor conocido el promedio es NULL",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT genero,AVG(horas) AS promedio_horas FROM juego GROUP BY genero;\n\nAVG considera las horas conocidas de cada grupo, si no hay ningún valor conocido el promedio es NULL"
+      ],
+      "fixtures": [
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Bosque','Terror',10,'activo'),(2,'Carrera','Deportes',20,'activo'),(3,'Bosque','Terror',0,'cancelado'),(4,'Luna','Aventura',NULL,'activo');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Luna','Terror',30,'activo'),(2,'Bosque','Terror',10,'activo'),(3,'Carrera','Deportes',10,'cancelado'),(4,'Dunas','Aventura',10,'cancelado');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Amanecer','Terror',NULL,'activo'),(2,'Ruedas','Deportes',0,'activo'),(3,'Huellas','Terror',0,'activo');"
+      ]
+    },
+    {
+      "id": "biblioteca_4",
+      "author": "sofia",
+      "project": "biblioteca",
+      "stage": 4,
+      "lesson": "4_1",
+      "title": "Lo que más jugué",
+      "text": "Busco los juegos que superan mi promedio de horas, tengo sospechosos pero quiero pruebas",
+      "objective": "Devuelve id, nombre y horas de juegos con horas mayores al promedio general de horas conocidas",
+      "sql": "SELECT id,nombre,horas FROM juego WHERE horas > (SELECT AVG(horas) FROM juego);",
+      "is_write": false,
+      "previous": "biblioteca_3",
+      "xp": 350,
+      "money": 17,
+      "reputation": 6,
+      "hints": [
+        "La subconsulta calcula el promedio una vez para la comparación, el filtro exterior decide qué juegos lo superan",
+        "Revisa los nombres y el tipo de cada columna en el catálogo, comprueba también los casos del límite",
+        "Una solución posible:\n\nSELECT id,nombre,horas FROM juego WHERE horas > (SELECT AVG(horas) FROM juego);\n\nLa subconsulta calcula el promedio una vez para la comparación, el filtro exterior decide qué juegos lo superan"
+      ],
+      "fixtures": [
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Bosque','Terror',10,'activo'),(2,'Carrera','Deportes',20,'activo'),(3,'Bosque','Terror',0,'cancelado'),(4,'Luna','Aventura',NULL,'activo');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Luna','Terror',30,'activo'),(2,'Bosque','Terror',10,'activo'),(3,'Carrera','Deportes',10,'cancelado'),(4,'Dunas','Aventura',10,'cancelado');",
+        "CREATE TABLE juego(id INTEGER PRIMARY KEY,nombre TEXT,genero TEXT,horas REAL,estado TEXT);\nINSERT INTO juego VALUES (1,'Amanecer','Terror',NULL,'activo'),(2,'Ruedas','Deportes',0,'activo'),(3,'Huellas','Terror',0,'activo');"
+      ]
+    },
+    {
+      "id": "equipo_agenda",
+      "author": "equipo_datos",
+      "project": "auditoria_agenda",
+      "stage": 1,
+      "lesson": "4_2",
+      "previous": "",
+      "title": "Revisar una consulta generada por IA",
+      "text": "Estamos revisando un reporte de apoyo estudiantil generado por una herramienta de IA, no da error, pero desaparecen estudiantes que no tienen una tutoría de claves, necesitamos que compruebes el resultado antes de compartirlo",
+      "objective": "Devuelve e.id, e.nombre y t.tema para todos los estudiantes, solo relaciona tutorías cuyo tema sea Claves, si un estudiante no tiene una de esas tutorías conserva su fila con tema NULL",
+      "broken_sql": "SELECT e.id,e.nombre,t.tema\nFROM estudiante e\nLEFT JOIN tutoria t ON t.estudiante_id=e.id\nWHERE t.tema='Claves';",
+      "sql": "SELECT e.id,e.nombre,t.tema FROM estudiante e LEFT JOIN tutoria t ON t.estudiante_id=e.id AND t.tema='Claves';",
+      "is_write": false,
+      "xp": 450,
+      "money": 35,
+      "reputation": 8,
+      "recommendation": true,
+      "fixtures": [
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6.8),(2,'Carlos',3.9),(3,'Sofía',6.8),(4,'Matías',NULL);\nINSERT INTO tutoria VALUES (1,1,'Claves'),(2,1,'Tipos'),(3,2,'Filtros');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',7),(2,'Carlos',5),(3,'Carlos',4),(4,'Sofía',NULL);\nINSERT INTO tutoria VALUES (1,2,'Claves'),(2,2,'Filtros'),(3,2,'Tipos'),(4,3,'Orden');",
+        "CREATE TABLE estudiante(id INTEGER PRIMARY KEY,nombre TEXT NOT NULL,nota REAL); CREATE TABLE tutoria(id INTEGER PRIMARY KEY,estudiante_id INTEGER REFERENCES estudiante(id),tema TEXT);\nINSERT INTO estudiante VALUES (1,'Moshi',6),(2,'Carlos',6),(3,'Sofía',6),(4,'Matías',3);\n"
+      ],
+      "hints": [
+        "El filtro de tutorías debe decidir qué coincidencias se unen, una condición en WHERE se aplica después de formar el resultado y puede eliminar las filas sin coincidencia",
+        "Prueba la condición de tema dentro de ON junto con la comparación de ID",
+        "SELECT e.id,e.nombre,t.tema FROM estudiante e LEFT JOIN tutoria t ON t.estudiante_id=e.id AND t.tema='Claves';\n\nEl LEFT JOIN conserva estudiantes y busca únicamente coincidencias de tutorías de claves"
+      ],
+      "recommendation_text": "Revisó una consulta generada por IA y comprobó los casos sin coincidencias antes de entregar el reporte, demostró criterio al validar el resultado"
+    },
+    {
+      "id": "investigar_reservas",
+      "lesson": "2_1",
+      "title": "Recuperar la reserva correcta",
+      "objective": "Devuelve id y sala de todas las reservas cuyo estudiante_id sea 12, no uses el nombre para distinguir personas",
+      "sql": "SELECT id,sala FROM reserva WHERE estudiante_id=12;",
+      "fixtures": [
+        "CREATE TABLE reserva(id INTEGER PRIMARY KEY,estudiante_id INTEGER,estudiante_nombre TEXT,sala TEXT); INSERT INTO reserva VALUES(31,7,'Carlos','Norte'),(32,12,'Carlos','Sur');",
+        "CREATE TABLE reserva(id INTEGER PRIMARY KEY,estudiante_id INTEGER,estudiante_nombre TEXT,sala TEXT); INSERT INTO reserva VALUES(41,12,'Moshi','Taller'),(42,7,'Carlos','Norte'),(43,12,'Moshi','Sur');",
+        "CREATE TABLE reserva(id INTEGER PRIMARY KEY,estudiante_id INTEGER,estudiante_nombre TEXT,sala TEXT); INSERT INTO reserva VALUES(51,7,'Carlos','Norte');"
+      ],
+      "evidence": "reservas",
+      "author": "equipo_datos",
+      "project": "investigar_reservas",
+      "stage": 1,
+      "previous": "",
+      "is_write": false,
+      "text": "Marco te dejó un caso para investigar, revisa los documentos y plantea una explicación antes de corregir la consulta",
+      "xp": 400,
+      "money": 25,
+      "reputation": 6,
+      "hints": [
+        "Define qué representa cada fila y cuál es su identidad",
+        "Compara la consulta con los registros de los documentos y prueba las ausencias de coincidencias",
+        "SELECT id,sala FROM reserva WHERE estudiante_id=12;"
+      ]
+    },
+    {
+      "id": "investigar_totales",
+      "lesson": "4_2",
+      "title": "Reconstruir los totales",
+      "objective": "Devuelve p.id, total de venta.cantidad AS vendidas y total de compra.cantidad AS compradas por producto, incluye productos sin movimientos y muestra cero en el total ausente",
+      "sql": "SELECT p.id,COALESCE((SELECT SUM(v.cantidad) FROM venta v WHERE v.producto_id=p.id),0) AS vendidas,COALESCE((SELECT SUM(c.cantidad) FROM compra c WHERE c.producto_id=p.id),0) AS compradas FROM producto p;",
+      "fixtures": [
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT);CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER,cantidad INTEGER);CREATE TABLE compra(id INTEGER PRIMARY KEY,producto_id INTEGER,cantidad INTEGER);INSERT INTO producto VALUES(1,'Pan'),(2,'Leche');INSERT INTO venta VALUES(10,1,2),(11,1,2);INSERT INTO compra VALUES(81,1,3),(82,1,5);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT);CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER,cantidad INTEGER);CREATE TABLE compra(id INTEGER PRIMARY KEY,producto_id INTEGER,cantidad INTEGER);INSERT INTO producto VALUES(1,'Pan'),(2,'Pan');INSERT INTO venta VALUES(1,2,3);INSERT INTO compra VALUES(1,1,8);",
+        "CREATE TABLE producto(id INTEGER PRIMARY KEY,nombre TEXT);CREATE TABLE venta(id INTEGER PRIMARY KEY,producto_id INTEGER,cantidad INTEGER);CREATE TABLE compra(id INTEGER PRIMARY KEY,producto_id INTEGER,cantidad INTEGER);INSERT INTO producto VALUES(1,'Té');"
+      ],
+      "evidence": "totales",
+      "author": "equipo_datos",
+      "project": "investigar_totales",
+      "stage": 1,
+      "previous": "",
+      "is_write": false,
+      "text": "Marco te dejó un caso para investigar, revisa los documentos y plantea una explicación antes de corregir la consulta",
+      "xp": 400,
+      "money": 25,
+      "reputation": 6,
+      "hints": [
+        "Define qué representa cada fila y cuál es su identidad",
+        "Compara la consulta con los registros de los documentos y prueba las ausencias de coincidencias",
+        "SELECT p.id,COALESCE((SELECT SUM(v.cantidad) FROM venta v WHERE v.producto_id=p.id),0) AS vendidas,COALESCE((SELECT SUM(c.cantidad) FROM compra c WHERE c.producto_id=p.id),0) AS compradas FROM producto p;"
+      ]
+    }
+  ]
+}

@@ -88,5 +88,7 @@ class DialogBox:
         render_wrapped_text(surface, self.pages[self.page_index], text_rect, self.font_text, color=COLOR_WHITE, line_spacing=2, padding=0)
 
         # Indicador de continuación
-        hint_surf = self.font_hint.render(f"{self.page_index + 1:02} / {len(self.pages):02}  ▸", True, COLOR_CYAN)
+        hint_surf = self.font_hint.render(f"{self.page_index + 1:02} / {len(self.pages):02}", True, COLOR_CYAN)
         surface.blit(hint_surf, (box_x+60, box_y + box_h - 13))
+        from game.visuals import advance_indicator
+        advance_indicator(surface,(box_x+119,box_y+box_h-9),pygame.time.get_ticks()//16,self.page_index==len(self.pages)-1)

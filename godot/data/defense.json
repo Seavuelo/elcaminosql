@@ -1,0 +1,98 @@
+{
+  "almacen": [
+    {
+      "q": "¿Por qué incluiste cero y dejaste fuera cinco al buscar reposición?",
+      "options": [
+        "Porque las primeras filas siempre tienen menos stock",
+        "Porque el criterio era stock menor que cinco, el límite no estaba incluido",
+        "Porque los productos con cinco no existen"
+      ],
+      "answer": 1,
+      "feedback": "El filtro representa una regla precisa del almacén, el cero cumple stock < 5 y el cinco no"
+    },
+    {
+      "q": "Dos productos se llaman Pan, ¿qué dato usas para distinguirlos?",
+      "options": [
+        "Su ID único",
+        "El nombre, que debería bastar",
+        "Su posición en la tabla"
+      ],
+      "answer": 0,
+      "feedback": "El ID mantiene la identidad aunque coincidan nombres o cambie la presentación de los datos"
+    },
+    {
+      "q": "Si llegan ocho unidades de un producto, ¿qué actualización conserva el stock anterior?",
+      "options": [
+        "Cambiar el stock de todas las filas a ocho",
+        "Borrar el producto y crearlo de nuevo",
+        "Sumar ocho a su stock actual usando su ID en WHERE"
+      ],
+      "answer": 2,
+      "feedback": "Una reposición agrega unidades, no reemplaza el total, WHERE limita el cambio al producto indicado"
+    }
+  ],
+  "tutorias": [
+    {
+      "q": "¿Por qué una tutoría guarda estudiante_id además de su propio ID?",
+      "options": [
+        "Porque todas las tablas necesitan columnas repetidas",
+        "Para identificar a qué estudiante pertenece sin confundir nombres",
+        "Para que ambos ID siempre tengan el mismo número"
+      ],
+      "answer": 1,
+      "feedback": "Cada tutoría conserva su identidad y usa una FK para referirse a la identidad del estudiante"
+    },
+    {
+      "q": "Una estudiante todavía no rinde la prueba, ¿qué representa mejor su nota pendiente?",
+      "options": [
+        "NULL, todavía no hay una nota conocida",
+        "Cero, siempre da igual para el promedio",
+        "Una nota inventada hasta que llegue la real"
+      ],
+      "answer": 0,
+      "feedback": "Una ausencia de valor no es un cero, cambiarla por cero alteraría el significado del promedio"
+    },
+    {
+      "q": "¿Qué ocurre con agenda_tutoria cuando cambian los datos de sus tablas?",
+      "options": [
+        "La vista conserva para siempre una copia antigua",
+        "Hay que borrar el proyecto completo",
+        "La vista vuelve a ejecutar su consulta sobre los datos actuales"
+      ],
+      "answer": 2,
+      "feedback": "La vista guarda la definición de una consulta, no necesita duplicar las filas"
+    }
+  ],
+  "biblioteca": [
+    {
+      "q": "¿Cómo trata AVG una hora NULL y una hora igual a cero?",
+      "options": [
+        "Las trata como el mismo dato",
+        "Ignora NULL, pero cuenta el cero como un valor conocido",
+        "Convierte ambas en una hora"
+      ],
+      "answer": 1,
+      "feedback": "Cero horas es una cantidad conocida, NULL indica que no conocemos el valor"
+    },
+    {
+      "q": "¿Qué representa una fila del promedio por género?",
+      "options": [
+        "Un género y el promedio de sus horas conocidas",
+        "Un juego elegido al azar",
+        "El total de todos los géneros juntos"
+      ],
+      "answer": 0,
+      "feedback": "GROUP BY define el nivel del resultado, el promedio se calcula dentro de cada género"
+    },
+    {
+      "q": "¿Qué evita que la limpieza de registros cancelados borre también los juegos activos?",
+      "options": [
+        "El orden en que se guardaron",
+        "Cambiar el nombre de la tabla",
+        "El filtro de estado en WHERE y una prueba previa del alcance"
+      ],
+      "answer": 2,
+      "feedback": "El filtro limita qué filas elimina DELETE, probarlo antes permite comprobar su alcance"
+    }
+  ]
+}

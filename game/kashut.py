@@ -15,6 +15,12 @@ def reward_for(score):
     return 40+20*score+{1:100,2:60,3:30,None:0}[podium_rank(score)]
 
 
+def reading_seconds(day,index):
+    question,options,_,_=QUESTIONS[day][min(index,9)]
+    words=len((' '.join((question,)+tuple(options))).split())
+    return min(45.,25.+max(0,words-25)*.5)
+
+
 class Kashut:
     def __init__(self,save,audio,on_exit):
         self.save,self.audio,self.on_exit=save,audio,on_exit
@@ -25,9 +31,9 @@ class Kashut:
     def open(self,day):
         self.day=day
         records=self.save.data['foundation'].setdefault('kashut',{})
-        self.state=records.setdefault(str(day),dict(answers=[],remaining=25.,reviewed=False,best=0,xp_granted=0))
+        self.state=records.setdefault(str(day),dict(answers=[],remaining=reading_seconds(day,0),reviewed=False,best=0,xp_granted=0))
         self.state.setdefault('xp_granted',0)
-        self.remaining=float(self.state.get('remaining',25.))
+        self.remaining=float(self.state.get('remaining',reading_seconds(day,len(self.state['answers']))))
         self.paused=False
         self.cooldown=0
         self.review_index=0
@@ -49,7 +55,7 @@ class Kashut:
     def answer(self,index):
         if self.phase!='question' or self.paused or self.cooldown>0: return
         self.state['answers'].append(index)
-        self.remaining=25.
+        self.remaining=reading_seconds(self.day,len(self.state['answers']))
         self.cooldown=.3
         self.audio.play_key()
         if len(self.state['answers'])==10:
@@ -69,7 +75,7 @@ class Kashut:
         if podium_rank(self.score): self.audio.play_success()
 
     def restart(self):
-        self.state.update(answers=[],remaining=25.,reviewed=False,complete=False)
+        self.state.update(answers=[],remaining=reading_seconds(self.day,0),reviewed=False,complete=False)
         self.open(self.day)
         self.persist()
 
@@ -132,9 +138,9 @@ class Kashut:
             index=len(self.state['answers'])
             question,options,correct,why=QUESTIONS[self.day][index]
             draw_fitted_text(surface,f'Pregunta {index+1}/10 | {max(0,int(self.remaining+1))} s',pygame.Rect(24,57,432,18),self.small,(200,205,230),padding=0)
-            render_wrapped_text(surface,question,pygame.Rect(24,88,432,48),self.title,padding=0,line_spacing=3)
+            draw_fitted_text(surface,question,pygame.Rect(24,82,432,53),self.title,(245,242,255),padding=0)
             draw.rect(surface,(60,40,85),(24,140,432,4))
-            draw.rect(surface,(95,220,205),(24,140,int(432*self.remaining/25),4))
+            draw.rect(surface,(95,220,205),(24,140,int(432*min(1,self.remaining/reading_seconds(self.day,index))),4))
             colors=[(150,44,68),(37,80,160),(135,95,16),(30,110,83)]
             for i,option in enumerate(options):
                 self.button(surface,f'{i+1}. '+option,(24+(i%2)*221,156+(i//2)*58,211,49),lambda j=i:self.answer(j),colors[i])
@@ -144,13 +150,13 @@ class Kashut:
             pname=self.save.data.get('player_name','Estudiante')
             text='¡PRIMER LUGAR!' if rank==1 else '¡Estás en el podio!' if rank else 'Terminaste, ahora repasemos'
             draw_fitted_text(surface,text,pygame.Rect(24,61,432,25),self.title,(255,220,100),padding=0)
-            draw_fitted_text(surface,f'{self.score}/10 aciertos | Mejor resultado: {self.state["best"]}/10 | XP obtenida en esta jornada: {self.state["xp_granted"]}',pygame.Rect(24,91,432,20),self.small,(225,220,245),padding=0)
+            draw_fitted_text(surface,f'{self.score}/10 aciertos | Mejor resultado: {self.state["best"]}/10 | XP total del día: {self.state["xp_granted"]}',pygame.Rect(24,91,432,20),self.small,(225,220,245),padding=0)
             names={1:'Moshi',2:'Sofía',3:'Matías'}
             if rank:
                 if rank==1:names.update({2:'Moshi',3:'Sofía'})
                 names[rank]=pname
-            else: draw_fitted_text(surface,pname+' | Sigue practicando, puedes repetir',pygame.Rect(24,116,432,20),self.font,(220,210,235),padding=0)
-            for place,x,height in [(2,56,62),(1,184,93),(3,312,43)]:
+            else: draw_fitted_text(surface,pname+' | Sigue practicando, puedes repetir',pygame.Rect(24,107,432,18),self.font,(220,210,235),padding=0)
+            for place,x,height in [(2,56,52),(1,184,75),(3,312,38)]:
                 color=(225,175,55) if place==1 else (125,145,175) if place==2 else (160,105,65)
                 panel(surface,pygame.Rect(x,229-height,112,height),mix(color,(23,31,45),.18),color,radius=3)
                 draw.line(surface,mix(color,(255,255,255),.35),(x+4,230-height),(x+107,230-height))
@@ -160,14 +166,25 @@ class Kashut:
                 for i in range(42 if rank==1 else 20):
                     x=(i*67+self.tick*2)%480; y=(i*29+self.tick*(2 if rank==1 else 1))%225
                     draw.rect(surface,[(255,205,65),(90,230,195),(190,120,245)][i%3],(x,y,2,3))
-            self.button(surface,'Retroalimentación',(24,249,282,29),self.next_review)
+            self.button(surface,'Salir del Kashut' if not self.wrong else 'Revisar respuestas',(24,249,282,29),self.next_review)
             self.button(surface,'Repetir',(316,249,140,29),self.restart)
+            draw_fitted_text(surface,'Repetir no duplica XP, mejorar tu mejor marca premia solo la diferencia',pygame.Rect(24,281,432,13),self.small,(192,193,216),padding=0)
         else:
             index=self.wrong[self.review_index]
             question,options,correct,why=QUESTIONS[self.day][index]
             answer=self.state['answers'][index]
-            text=f'Pregunta {index+1}\n{question}\n\nTu respuesta: '+('Sin respuesta' if answer is None else options[answer])+f'\n\nRespuesta correcta: {options[correct]}\n\n'+why
-            render_wrapped_text(surface,text,pygame.Rect(24,65,432,177),self.font,padding=0,line_spacing=3)
+            from game.learning_diagrams import illustration
+            from game.kashut_questions import DIAGRAMS
+            panel(surface,pygame.Rect(18,58,444,56),(41,43,73),(156,143,208),shadow=False)
+            draw_fitted_text(surface,f'REPASO | Pregunta {index+1}',pygame.Rect(26,63,428,13),self.small,(213,191,255),padding=0)
+            draw_fitted_text(surface,question,pygame.Rect(26,80,428,28),self.font,(242,240,250),padding=0)
+            for x,label,text,color in [(18,'TU RESPUESTA','Sin respuesta' if answer is None else options[answer],(244,159,146)),(246,'RESPUESTA CORRECTA',options[correct],(133,230,189))]:
+                panel(surface,pygame.Rect(x,120,216,49),(28,38,58),color,shadow=False)
+                draw_fitted_text(surface,label,pygame.Rect(x+8,124,200,11),self.small,color,padding=0)
+                draw_fitted_text(surface,text,pygame.Rect(x+8,139,200,25),self.font,(240,239,246),padding=0)
+            panel(surface,pygame.Rect(18,177,444,67),(20,49,49),(103,167,157),shadow=False)
+            illustration(surface,DIAGRAMS[self.day][index],pygame.Rect(25,185,165,50),variant=index)
+            draw_fitted_text(surface,why,pygame.Rect(201,184,252,53),self.font,(224,242,229),padding=0)
             self.button(surface,f'Repaso {self.review_index+1}/{len(self.wrong)} | Seguir',(24,252,432,30),self.next_review)
         if self.paused:
             panel(surface,pygame.Rect(65,83,350,142),(21,33,48),GOLD)

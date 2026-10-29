@@ -8,7 +8,7 @@ El remoto `origin` ya apunta a `https://github.com/Seavuelo/elcaminosql.git`, es
 git status
 git add .
 git diff --cached --stat
-git commit -m "Prepara El Camino SQL v0.2.0-alpha.1"
+git commit -m "Prepara El Camino SQL v0.2.0-alpha.4"
 git push origin main
 ```
 
@@ -22,10 +22,10 @@ Si el push se rechaza por cambios remotos, revisa `git fetch origin` y `git log 
 
 1. Primero sube el commit a `main`
 2. Abre https://github.com/Seavuelo/elcaminosql/releases/new
-3. Crea el tag `v0.2.0-alpha.1` con `main` como destino
-4. Título: `El Camino SQL v0.2.0-alpha.1 — Versión experimental`
-5. Copia las notas de `docs/releases/v0.2.0-alpha.1.md`
-6. Adjunta `dist/ElCaminoSQL-0.2.0-alpha.1-Windows-x64.zip` y `dist/SHA256SUMS.txt`
+3. Crea el tag `v0.2.0-alpha.4` con `main` como destino
+4. Título: `El Camino SQL v0.2.0-alpha.4 — Versión experimental`
+5. Copia las notas de `docs/releases/v0.2.0-alpha.4.md`
+6. Adjunta `dist/ElCaminoSQL-0.2.0-alpha.4-Windows-x64.zip` y `dist/SHA256SUMS.txt`
 7. Marca **This is a pre-release** y deja desmarcado **Set as latest release**
 8. Usa **Save draft** para revisarlo o **Publish release** para hacerlo público
 

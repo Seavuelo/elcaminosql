@@ -125,7 +125,7 @@ class TitleScreen:
         bw = by_surf.get_width() + 10
         draw.rect(surface, (14, 20, 32, 220), (VIRTUAL_WIDTH - bw - 8, 8, bw, 18))
         draw.rect(surface, (40, 70, 110), (VIRTUAL_WIDTH - bw - 8, 8, bw, 18), 1)
-        surface.blit(by_surf, (VIRTUAL_WIDTH - bw - 3, 11))
+        centered(surface,'by Seavuelo',pygame.Rect(VIRTUAL_WIDTH-bw-8,8,bw,18),self.font_by,COLOR_CYAN,padding=0)
 
         panel(surface,pygame.Rect(102,30,276,43),(19,36,46),MINT,shadow=True)
         centered(surface,"EL CAMINO SQL",pygame.Rect(107,30,266,28),self.font_title_big,GOLD)
@@ -146,7 +146,7 @@ class TitleScreen:
             card_y = 82
             panel(surface,pygame.Rect(card_x,card_y,card_w,24),(27,44,53),MINT)
 
-            save_str = f"Expediente: {pname} ({prole})  |  Año {pyear} de 4 (Día {pday}/5)"
+            save_str = f"Partida actual: {pname} ({prole})  |  Año {pyear} de 4 (Día {pday}/5)"
             if attempts > 1:
                 save_str += f" [Repetición #{attempts}]"
             centered(surface,save_str,pygame.Rect(card_x+5,card_y,card_w-10,24),self.font_info,(192,216,211))
